@@ -132,6 +132,8 @@
         <label>Tampilan Iklan <input type="number" id="tampilan" min="0" /></label>
         <label>Harga Jual (Rp) <input type="number" id="hargaJual" min="0" /></label>
         <label>Stok Tersedia <input type="number" id="stok" min="0" placeholder="sisa stok" /></label>
+<label>Link Shopee <input type="url" id="linkShopee" placeholder="https://shopee.co.id/..." /></label>
+<label>URL Foto Produk <input type="url" id="foto" placeholder="Shopee: klik kanan gambar > Copy image address" /></label>
 <label>Catatan <input type="text" id="catatan" /></label>
       </div>
       <div class="actions">
@@ -266,7 +268,9 @@ function formatRupiah(n) {
         roas: (num("biayaIklan") > 0 ? +((num("omsetIklan") / num("biayaIklan")).toFixed(2)) : 0),
         hargaJual: num("hargaJual"),
 stok: (function () { const v = document.getElementById("stok").value; return v === "" ? null : (parseInt(String(v).replace(/[^0-9-]/g, ""), 10) || 0); })(),
-        catatan: document.getElementById("catatan").value.trim(),
+        linkShopee: document.getElementById("linkShopee").value.trim(),
+foto: document.getElementById("foto").value.trim(),
+catatan: document.getElementById("catatan").value.trim(),
       };
     }
 
@@ -306,7 +310,9 @@ stok: (function () { const v = document.getElementById("stok").value; return v =
       document.getElementById("tampilan").value = p.tampilan || "";
       document.getElementById("hargaJual").value = p.hargaJual || "";
 document.getElementById("stok").value = (p.stok === null || p.stok === undefined) ? "" : p.stok;
-      document.getElementById("catatan").value = p.catatan || "";
+      document.getElementById("linkShopee").value = p.linkShopee || "";
+document.getElementById("foto").value = p.foto || "";
+document.getElementById("catatan").value = p.catatan || "";
       document.getElementById("form-title").textContent = "✏️ Edit Produk";
       document.getElementById("btn-simpan").textContent = "Update Produk";
       document.getElementById("btn-batal").hidden = false;
@@ -348,7 +354,7 @@ document.getElementById("stok").value = (p.stok === null || p.stok === undefined
           "Skor Total": total, "Level": tentukanLevel(total).label,
           "Omset": p.omset, "Pesanan": p.pesanan, "CVR (%)": p.cvr, "Repeat Rate (%)": p.repeat,
           "Biaya Iklan": p.biayaIklan || 0, "Omset Iklan": p.omsetIklan || 0, "ROAS": roasNilai(p), "Klik": p.klik || 0, "Tampilan": p.tampilan || 0,
-          "Harga Jual": p.hargaJual, "Stok": (p.stok == null ? "" : p.stok), "Catatan": p.catatan, "Fokus Perbaikan": fokusPerbaikan(p).teks,
+          "Harga Jual": p.hargaJual, "Stok": (p.stok == null ? "" : p.stok), "Link Shopee": p.linkShopee || "", "Foto": p.foto || "", "Catatan": p.catatan, "Fokus Perbaikan": fokusPerbaikan(p).teks,
         };
       });
       const ws = XLSX.utils.json_to_sheet(baris);
@@ -439,14 +445,18 @@ document.getElementById("stok").value = (p.stok === null || p.stok === undefined
             repeat: angkaDesimal(ambilKolom(r, ["Repeat Rate", "Repeat Rate (%)", "Tingkat Pembelian Ulang", "Repeat", ["pembelian", "ulang"]])),
             hargaJual: angkaInt(ambilKolom(r, ["Harga Jual", "Harga", "Price"])),
 stok: (function () { const v = ambilKolom(r, ["Stok", "Stock", "Sisa Stok", "Jumlah Stok", "Stok Tersedia", "Persediaan", "Stok Produk", ["stok"], ["stock"]]); return (v === "" || v === null || v === undefined) ? null : angkaInt(v); })(),
-            catatan: String(ambilKolom(r, ["Catatan", "Notes"]) || ""),
+            linkShopee: String(ambilKolom(r, ["Link Shopee", "Link Produk", "Link", "URL Produk", "URL", "Tautan", ["link"], ["url"]]) || ""),
+foto: String(ambilKolom(r, ["Foto", "URL Foto", "Foto Produk", "Gambar", "Image", "Image URL", ["foto"], ["gambar"], ["image"]]) || ""),
+catatan: String(ambilKolom(r, ["Catatan", "Notes"]) || ""),
           });
           const ada = produkList.find((p) => normNama(p.nama) === normNama(d.nama));
           if (ada) {
             if (d.kategori && d.kategori !== "Fashion") ada.kategori = d.kategori;
             ["permintaan", "kompetisi", "tren", "omset", "pesanan", "cvr", "repeat", "hargaJual"].forEach((k) => { if (d[k]) ada[k] = d[k]; });
             if (d.stok != null) { ada.stok = d.stok; nStok++; }
-            if (d.catatan) ada.catatan = d.catatan;
+            if (d.linkShopee) ada.linkShopee = d.linkShopee;
+if (d.foto) ada.foto = d.foto;
+if (d.catatan) ada.catatan = d.catatan;
             nUpdate++;
           } else {
             const adaSinyal = d.omset || d.pesanan || d.cvr || d.repeat || d.permintaan || d.kompetisi || d.tren || d.hargaJual;
@@ -543,7 +553,7 @@ stok: (function () { const v = ambilKolom(r, ["Stok", "Stock", "Sisa Stok", "Jum
         const tr = document.createElement("tr");
         tr.innerHTML =
           '<td>' + (i + 1) + '</td>' +
-          '<td><strong>' + p.nama + '</strong>' + (p.catatan ? '<br><small style="color:#888">' + p.catatan + '</small>' : "") + '</td>' +
+          '<td>' + (p.foto ? '<img src="' + p.foto + '" alt="" style="width:42px;height:42px;object-fit:cover;border-radius:6px;float:left;margin-right:8px" onerror="this.style.display=\'none\'">' : "") + '<strong>' + (p.linkShopee ? '<a href="' + p.linkShopee + '" target="_blank" rel="noopener" style="color:#2383e2;text-decoration:none">' + p.nama + ' ↗</a>' : p.nama) + '</strong>' + (p.catatan ? '<br><small style="color:#888">' + p.catatan + '</small>' : "") + '</td>' +
           '<td><span class="badge ' + level.kelas + '">' + level.label + '</span></td>' +
           '<td><strong>' + total + '</strong>/15' + (punyaSkorManual(p) ? '' : ' <small style="color:#aaa">auto</small>') + '</td>' +
           '<td>' + p.kategori + '</td>' +
@@ -629,7 +639,7 @@ stok: (function () { const v = ambilKolom(r, ["Stok", "Stock", "Sisa Stok", "Jum
         else if (g.sinyal === "repeat") alasan = "Repeat rate tinggi (" + (p.repeat || 0) + "%) tapi omset kecil — pembeli loyal, layak di-scale.";
         else alasan = "Permintaan lumayan (" + (p.pesanan || 0).toLocaleString("id-ID") + " pesanan) tapi omset masih kecil — dorong exposure / pertimbangkan naikin harga.";
         return '<div style="border-left:3px solid #8b5cf6;padding:8px 12px;margin-bottom:10px;background:#faf8ff;border-radius:0 8px 8px 0">' +
-          '<strong>' + p.nama + '</strong> <span style="color:#888;font-size:12px">· ' + p.kategori + ' · Omset ' + formatRupiah(p.omset || 0) + (p.stok != null ? ' · Stok ' + p.stok : '') + '</span>' +
+          (p.foto ? '<img src="' + p.foto + '" style="width:34px;height:34px;object-fit:cover;border-radius:5px;float:left;margin-right:8px" onerror="this.style.display=\'none\'">' : '') + '<strong>' + (p.linkShopee ? '<a href="' + p.linkShopee + '" target="_blank" rel="noopener" style="color:#6b21a8">' + p.nama + ' ↗</a>' : p.nama) + '</strong> <span style="color:#888;font-size:12px">· ' + p.kategori + ' · Omset ' + formatRupiah(p.omset || 0) + (p.stok != null ? ' · Stok ' + p.stok : '') + '</span>' +
           '<div style="font-size:12px;color:#6b21a8;margin-top:3px">' + alasan + '</div>' +
         '</div>';
       }).join("");
@@ -891,6 +901,33 @@ function renderAiSpesialis() {
   html += '<h3 style="font-size:14px;margin-bottom:10px">Daftar Keputusan (urut prioritas)</h3>';
   if (keputusan.length === 0) { html += '<p style="color:#1a7f37;font-size:13px">Mantap - nggak ada masalah mendesak. Pertahankan ritme & terus pantau tiap minggu.</p>'; }
   else html += keputusan.map((k) => '<div style="border:1px solid #eee;border-left:4px solid ' + k.warna + ';border-radius:0 8px 8px 0;padding:10px 14px;margin-bottom:10px"><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap"><span style="font-size:10px;font-weight:700;color:#fff;background:' + k.warna + ';padding:2px 8px;border-radius:20px">' + k.lbl + '</span><strong style="font-size:14px">' + k.judul + '</strong></div><div style="font-size:13px;margin-bottom:4px">' + k.aksi + '</div><div style="font-size:12px;color:#777"><strong>Kenapa:</strong> ' + k.alasan + '</div><div style="font-size:12px;color:#1a7f37"><strong>Dampak:</strong> ' + k.dampak + '</div></div>').join('');
+  const vonis = (p) => {
+    const adaIklanP = (p.biayaIklan || 0) > 0;
+    const roasP = (p.roas && p.roas > 0) ? p.roas : (adaIklanP ? (p.omsetIklan || 0) / p.biayaIklan : 0);
+    const pOmset = persentil(p.omset || 0, statMetrik.omset);
+    const qN = adaKualitas ? Math.max(persentil(p.cvr || 0, statMetrik.cvr), persentil(p.repeat || 0, statMetrik.repeat)) : persentil(p.pesanan || 0, statMetrik.pesanan);
+    const adaJual = (p.omset || 0) > 0 || (p.pesanan || 0) > 0;
+    const lvl = tentukanLevel(hitungSkorTotal(p)).key;
+    if (p.stok != null && p.stok === 0 && adaJual) return { lbl: "RESTOCK", warna: "#c1271e", aksi: "Stok HABIS padahal masih laku - restock secepatnya, tiap hari kosong = penjualan & ranking ikut hilang." };
+    if (adaIklanP && roasP > 0 && roasP < 2) return { lbl: "BENAHI IKLAN", warna: "#c1271e", aksi: "Iklan boncos (ROAS " + roasP.toFixed(1) + "x). Pause/turunin budget, benahi targeting + listing dulu sebelum lanjut." };
+    if (!adaJual) return { lbl: "TEST / DROP", warna: "#9a6700", aksi: "Belum ada penjualan. Kasih tenggat 2-4 minggu + iklan tes kecil; kalau tetap sepi, drop & alihin budget." };
+    if (p.cvr > 0 && p.cvr < 2) return { lbl: "PERBAIKI LISTING", warna: "#9a6700", aksi: "CVR rendah (" + p.cvr + "%). Revisi foto utama, judul + keyword, harga & deskripsi SEBELUM gas iklan." };
+    if ((adaIklanP && roasP >= 4) || lvl === "high" || pOmset >= 0.8) return { lbl: "SCALE", warna: "#1a7f37", aksi: "Perform bagus" + (roasP >= 4 ? " (ROAS " + roasP.toFixed(1) + "x)" : "") + " - naikin budget iklan bertahap (+20%/minggu), bikin bundling/upsell, jaga stok." };
+    if (stokSiap(p) && qN >= 0.7 && pOmset <= 0.4) return { lbl: "GAS EXPOSURE", warna: "#6b21a8", aksi: "Hidden gem: sinyal kuat tapi omset kecil. Gas iklan pencarian + konten organik, kandidat produk juara." };
+    if (p.stok != null && p.stok > 0 && p.stok <= 10 && adaJual) return { lbl: "SIAPIN RESTOCK", warna: "#d97706", aksi: "Stok tinggal " + p.stok + " & masih laku - siapin restock biar nggak kehabisan pas lagi rame." };
+    if (p.repeat > 0 && p.repeat < 10 && adaJual) return { lbl: "JAGA RETENSI", warna: "#9a6700", aksi: "Repeat rate rendah (" + p.repeat + "%). Tingkatin kualitas + after-sales / bonus buat repeat order." };
+    return { lbl: "PERTAHANKAN", warna: "#2383e2", aksi: "Stabil. Pantau mingguan, pertahankan ritme iklan & stok." };
+  };
+  const prioMap = { "RESTOCK": 1, "BENAHI IKLAN": 2, "TEST / DROP": 3, "PERBAIKI LISTING": 4, "SCALE": 5, "GAS EXPOSURE": 6, "SIAPIN RESTOCK": 7, "JAGA RETENSI": 8, "PERTAHANKAN": 9 };
+  const perProduk = produkList.map((p) => ({ p: p, v: vonis(p) })).sort((a, b) => (prioMap[a.v.lbl] - prioMap[b.v.lbl]) || ((b.p.omset || 0) - (a.p.omset || 0)));
+  const ringkas = {};
+  perProduk.forEach((x) => { ringkas[x.v.lbl] = (ringkas[x.v.lbl] || 0) + 1; });
+  html += '<h3 style="font-size:14px;margin:22px 0 8px">Keputusan per Produk (' + perProduk.length + ')</h3>';
+  html += '<p style="font-size:12px;color:#888;margin-bottom:10px">Tiap produk dapet 1 vonis spesifik + langkah konkret, diurutin dari yang paling mendesak.</p>';
+  html += '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">' + Object.keys(ringkas).sort((a, b) => prioMap[a] - prioMap[b]).map((lbl) => '<span style="font-size:11px;font-weight:600;background:#f0f0f0;border-radius:20px;padding:3px 10px">' + lbl + ': ' + ringkas[lbl] + '</span>').join('') + '</div>';
+  html += '<div style="max-height:440px;overflow-y:auto;border:1px solid #eee;border-radius:8px">';
+  html += perProduk.map((x) => { const p = x.p; const v = x.v; return '<div style="display:flex;gap:10px;align-items:flex-start;padding:9px 12px;border-bottom:1px solid #f0f0f0">' + (p.foto ? '<img src="' + p.foto + '" style="width:38px;height:38px;object-fit:cover;border-radius:6px;flex-shrink:0" onerror="this.style.display=\'none\'">' : '') + '<div style="flex:1;min-width:0"><div style="margin-bottom:2px"><span style="font-size:10px;font-weight:700;color:#fff;background:' + v.warna + ';padding:2px 8px;border-radius:20px">' + v.lbl + '</span> <strong style="font-size:13px">' + (p.linkShopee ? '<a href="' + p.linkShopee + '" target="_blank" rel="noopener" style="color:#2383e2;text-decoration:none">' + p.nama + ' ↗</a>' : p.nama) + '</strong> <span style="font-size:11px;color:#999">· ' + formatRupiah(p.omset || 0) + (p.stok != null ? ' · stok ' + p.stok : '') + '</span></div><div style="font-size:12px;color:#555">' + v.aksi + '</div></div></div>'; }).join('');
+  html += '</div>';
   el.innerHTML = html;
 }
 function renderStrategiAds() {
