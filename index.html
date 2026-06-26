@@ -4,100 +4,53 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Riset Produk Potensial</title>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-      background: #f4f5f7;
-      color: #1a1a1a;
-      padding: 24px;
-      max-width: 1100px;
-      margin: 0 auto;
-    }
+    body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background: #f4f5f7; color: #1a1a1a; padding: 24px; max-width: 1200px; margin: 0 auto; }
     header { text-align: center; margin-bottom: 24px; }
     header h1 { font-size: 28px; }
     header p { color: #666; margin-top: 4px; }
-    .card {
-      background: #fff;
-      border-radius: 12px;
-      padding: 20px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-      margin-bottom: 20px;
-    }
+    .card { background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); margin-bottom: 20px; }
     h2 { font-size: 18px; margin-bottom: 16px; }
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 12px;
-    }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
     label { display: flex; flex-direction: column; font-size: 13px; color: #555; gap: 4px; }
-    input, select {
-      padding: 8px 10px;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      font-size: 14px;
-    }
+    input, select { padding: 8px 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; }
     .actions { margin-top: 16px; display: flex; gap: 10px; }
-    button {
-      background: #2383e2;
-      color: #fff;
-      border: none;
-      padding: 9px 16px;
-      border-radius: 8px;
-      font-size: 14px;
-      cursor: pointer;
-    }
+    button { background: #2383e2; color: #fff; border: none; padding: 9px 16px; border-radius: 8px; font-size: 14px; cursor: pointer; }
     button:hover { opacity: 0.9; }
     button.ghost { background: #eee; color: #333; }
-    .stats {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 12px;
-      margin-bottom: 20px;
-    }
-    .stat-box {
-      background: #fff;
-      border-radius: 12px;
-      padding: 16px;
-      text-align: center;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-    }
-    .stat-box .num { font-size: 26px; font-weight: 700; }
-    .stat-box .lbl { font-size: 12px; color: #666; }
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+    .stat-box { background: #fff; border-radius: 12px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .stat-box .num { font-size: 24px; font-weight: 700; }
+    .stat-box .lbl { font-size: 12px; color: #666; margin-bottom: 4px; }
+    .stat-box .sub { font-size: 11px; color: #888; margin-top: 4px; }
+    .toolbar { display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+    .toolbar input { flex: 1; min-width: 200px; }
     .filters { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
     .filters button { background: #eee; color: #333; }
     .filters button.active { background: #2383e2; color: #fff; }
-    table { width: 100%; border-collapse: collapse; font-size: 14px; }
-    th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid #eee; vertical-align: top; }
-    th { font-size: 12px; text-transform: uppercase; color: #888; }
-    .badge {
-      display: inline-block;
-      padding: 3px 10px;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 600;
-      white-space: nowrap;
-    }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { text-align: left; padding: 9px 8px; border-bottom: 1px solid #eee; vertical-align: top; }
+    th { font-size: 11px; text-transform: uppercase; color: #888; }
+    .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; white-space: nowrap; }
     .level-high { background: #d6f5dd; color: #1a7f37; }
     .level-mid  { background: #fdf3d0; color: #9a6700; }
     .level-low  { background: #fbdcdc; color: #c1271e; }
     .level-none { background: #eee; color: #888; }
-    .tip { font-size: 12px; color: #b35900; }
+    .tip { font-size: 11px; color: #b35900; max-width: 240px; }
     .tip.ok { color: #1a7f37; }
     .row-actions button { background: none; color: #2383e2; padding: 2px 6px; font-size: 13px; }
     .row-actions button.del { color: #c1271e; }
     .empty { text-align: center; color: #999; padding: 20px; }
     footer { text-align: center; }
-    @media (max-width: 700px) {
-      .stats { grid-template-columns: repeat(2, 1fr); }
-      table { font-size: 12px; }
-    }
+    @media (max-width: 800px) { .stats { grid-template-columns: repeat(2, 1fr); } table { font-size: 11px; } }
   </style>
 </head>
 <body>
   <header>
     <h1>🛒 Riset Produk Potensial</h1>
-    <p>Cek potensi produk: High / Mid / Low Level otomatis dari skor</p>
+    <p>Dashboard analisis produk e-commerce — Level High / Mid / Low otomatis</p>
   </header>
 
   <section class="stats" id="stats"></section>
@@ -106,9 +59,7 @@
     <h2 id="form-title">➕ Tambah Produk</h2>
     <form id="form-produk">
       <div class="grid">
-        <label>Nama Produk
-          <input type="text" id="nama" required placeholder="contoh: Mini Portable Blender" />
-        </label>
+        <label>Nama Produk <input type="text" id="nama" required placeholder="contoh: Mini Portable Blender" /></label>
         <label>Kategori
           <select id="kategori">
             <option>Fashion</option>
@@ -121,36 +72,32 @@
             <option>Hobi &amp; Mainan</option>
           </select>
         </label>
-        <label>Skor Permintaan (1-5)
-          <input type="number" id="permintaan" min="1" max="5" />
-        </label>
-        <label>Skor Kompetisi (1-5)
-          <input type="number" id="kompetisi" min="1" max="5" />
-        </label>
-        <label>Skor Margin (1-5)
-          <input type="number" id="margin" min="1" max="5" />
-        </label>
-        <label>Skor Tren (1-5)
-          <input type="number" id="tren" min="1" max="5" />
-        </label>
-        <label>Harga Modal (Rp)
-          <input type="number" id="hargaModal" min="0" />
-        </label>
-        <label>Harga Jual (Rp)
-          <input type="number" id="hargaJual" min="0" />
-        </label>
-        <label>Supplier
-          <input type="text" id="supplier" />
-        </label>
-        <label>Catatan
-          <input type="text" id="catatan" />
-        </label>
+        <label>Skor Permintaan (1-5) <input type="number" id="permintaan" min="1" max="5" /></label>
+        <label>Skor Kompetisi (1-5) <input type="number" id="kompetisi" min="1" max="5" /></label>
+        <label>Skor Tren (1-5) <input type="number" id="tren" min="1" max="5" /></label>
+        <label>Omset (Rp) <input type="number" id="omset" min="0" /></label>
+        <label>Pesanan <input type="number" id="pesanan" min="0" /></label>
+        <label>CVR (%) <input type="number" id="cvr" step="0.01" min="0" /></label>
+        <label>Repeat Rate (%) <input type="number" id="repeat" step="0.01" min="0" /></label>
+        <label>Harga Jual (Rp) <input type="number" id="hargaJual" min="0" /></label>
+        <label>Catatan <input type="text" id="catatan" /></label>
       </div>
       <div class="actions">
         <button type="submit" id="btn-simpan">Simpan Produk</button>
         <button type="button" id="btn-batal" class="ghost" hidden>Batal</button>
       </div>
     </form>
+  </section>
+
+  <section class="toolbar">
+    <input type="text" id="search" placeholder="🔍 Cari nama produk..." />
+    <select id="sortby">
+      <option value="skor">Skor tertinggi</option>
+      <option value="omset">Omset tertinggi</option>
+      <option value="pesanan">Pesanan terbanyak</option>
+      <option value="cvr">CVR tertinggi</option>
+      <option value="repeat">Repeat rate tertinggi</option>
+    </select>
   </section>
 
   <section class="filters" id="filters">
@@ -162,89 +109,72 @@
 
   <section class="card">
     <table id="tabel">
-      <thead>
-        <tr>
-          <th>Produk</th>
-          <th>Level</th>
-          <th>Skor</th>
-          <th>Kategori</th>
-          <th>Profit</th>
-          <th>Margin</th>
-          <th>Fokus Perbaikan</th>
-          <th></th>
-        </tr>
-      </thead>
+      <thead><tr>
+        <th>#</th><th>Produk</th><th>Level</th><th>Skor</th><th>Kategori</th>
+        <th>Omset</th><th>Pesanan</th><th>CVR</th><th>Repeat</th><th>Fokus Perbaikan</th><th></th>
+      </tr></thead>
       <tbody id="tbody"></tbody>
     </table>
-    <p id="kosong" class="empty" hidden>Belum ada produk. Tambahkan dulu di atas 👆</p>
+    <p id="kosong" class="empty" hidden>Belum ada produk. Tambah manual di atas atau klik Import Excel 👆</p>
   </section>
 
   <footer>
-    <button id="btn-export" class="ghost">⬇️ Export JSON</button>
+    <input type="file" id="file-import" accept=".xlsx,.xls" hidden />
+    <button id="btn-import" class="ghost">⬆️ Import Excel</button>
+    <button id="btn-export" class="ghost">⬇️ Export Excel</button>
   </footer>
 
   <script>
-    // ===== Penyimpanan & State =====
     const STORAGE_KEY = "produkPotensial";
     let produkList = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
     let editId = null;
     let filterAktif = "all";
+    let sortBy = "skor";
+    let cari = "";
 
-    // ===== LOGIKA PENILAIAN (inti tools) =====
-    function hitungSkorTotal(p) {
-      return (p.permintaan || 0) + (p.kompetisi || 0) + (p.margin || 0) + (p.tren || 0);
-    }
+    // ===== LOGIKA PENILAIAN =====
+    function hitungSkorTotal(p) { return (p.permintaan || 0) + (p.kompetisi || 0) + (p.tren || 0); }
     function tentukanLevel(total) {
       if (total === 0) return { label: "⚪ Belum dinilai", kelas: "level-none", key: "none" };
-      if (total >= 15) return { label: "🟢 High Level", kelas: "level-high", key: "high" };
-      if (total >= 10) return { label: "🟡 Mid Level", kelas: "level-mid", key: "mid" };
+      if (total >= 12) return { label: "🟢 High Level", kelas: "level-high", key: "high" };
+      if (total >= 8) return { label: "🟡 Mid Level", kelas: "level-mid", key: "mid" };
       return { label: "🔴 Low Level", kelas: "level-low", key: "low" };
     }
-    function hitungProfit(p) {
-      return (p.hargaJual || 0) - (p.hargaModal || 0);
-    }
-    function hitungMargin(p) {
-      if (!p.hargaJual) return 0;
-      return Math.round(((p.hargaJual - p.hargaModal) / p.hargaJual) * 100);
-    }
     function fokusPerbaikan(p) {
-      if (hitungSkorTotal(p) === 0) return { teks: "Belum dinilai", ok: false };
+      if (hitungSkorTotal(p) === 0 && !p.omset && !p.cvr && !p.repeat) return { teks: "Belum dinilai", ok: false };
       const saran = [];
-      if (p.permintaan > 0 && p.permintaan <= 2)
-        saran.push("Permintaan rendah: cari produk yang lebih dicari / perdalam riset pasar.");
-      if (p.kompetisi > 0 && p.kompetisi <= 2)
-        saran.push("Kompetisi ketat: cari diferensiasi / niche lebih sepi.");
-      if (p.margin > 0 && p.margin <= 2)
-        saran.push("Margin tipis: nego supplier / naikkan harga jual / ganti produk.");
-      if (p.tren > 0 && p.tren <= 2)
-        saran.push("Tren menurun: cari produk yang lagi naik / ikut tren terbaru.");
+      if (p.permintaan > 0 && p.permintaan <= 2) saran.push("Permintaan rendah: cari produk yang lebih dicari.");
+      if (p.kompetisi > 0 && p.kompetisi <= 2) saran.push("Kompetisi ketat: cari diferensiasi / niche lebih sepi.");
+      if (p.tren > 0 && p.tren <= 2) saran.push("Tren menurun: cari produk yang lagi naik.");
+      if (p.cvr > 0 && p.cvr < 2) saran.push("CVR rendah: perbaiki foto, judul, harga, & deskripsi listing.");
+      if (p.repeat > 0 && p.repeat < 10) saran.push("Repeat rate rendah: tingkatkan kualitas & after-sales.");
       if (saran.length === 0) return { teks: "✅ Semua faktor sudah kuat, pertahankan!", ok: true };
       return { teks: saran.join(" "), ok: false };
     }
     function formatRupiah(n) {
-      return "Rp " + (n || 0).toLocaleString("id-ID");
+      n = n || 0;
+      if (n >= 1e9) return "Rp " + (n / 1e9).toFixed(1).replace(".0", "") + "M";
+      if (n >= 1e6) return "Rp " + (n / 1e6).toFixed(1).replace(".0", "") + "jt";
+      if (n >= 1e3) return "Rp " + (n / 1e3).toFixed(1).replace(".0", "") + "rb";
+      return "Rp " + n;
     }
 
-    function simpan() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(produkList));
-    }
+    function simpan() { localStorage.setItem(STORAGE_KEY, JSON.stringify(produkList)); }
 
     function ambilForm() {
-      const num = (id) => {
-        const v = parseInt(document.getElementById(id).value, 10);
-        return isNaN(v) ? 0 : v;
-      };
+      const num = (id) => { const v = parseFloat(document.getElementById(id).value); return isNaN(v) ? 0 : v; };
       return {
         id: editId || Date.now(),
         nama: document.getElementById("nama").value.trim(),
         kategori: document.getElementById("kategori").value,
         permintaan: num("permintaan"),
         kompetisi: num("kompetisi"),
-        margin: num("margin"),
         tren: num("tren"),
-        hargaModal: num("hargaModal"),
+        omset: num("omset"),
+        pesanan: num("pesanan"),
+        cvr: num("cvr"),
+        repeat: num("repeat"),
         hargaJual: num("hargaJual"),
-        supplier: document.getElementById("supplier").value.trim(),
         catatan: document.getElementById("catatan").value.trim(),
       };
     }
@@ -252,14 +182,9 @@
     document.getElementById("form-produk").addEventListener("submit", (e) => {
       e.preventDefault();
       const data = ambilForm();
-      if (editId) {
-        produkList = produkList.map((p) => (p.id === editId ? data : p));
-      } else {
-        produkList.push(data);
-      }
-      simpan();
-      resetForm();
-      render();
+      if (editId) { produkList = produkList.map((p) => (p.id === editId ? data : p)); }
+      else { produkList.push(data); }
+      simpan(); resetForm(); render();
     });
 
     function resetForm() {
@@ -269,7 +194,6 @@
       document.getElementById("btn-simpan").textContent = "Simpan Produk";
       document.getElementById("btn-batal").hidden = true;
     }
-
     document.getElementById("btn-batal").addEventListener("click", resetForm);
 
     function editProduk(id) {
@@ -280,11 +204,12 @@
       document.getElementById("kategori").value = p.kategori;
       document.getElementById("permintaan").value = p.permintaan || "";
       document.getElementById("kompetisi").value = p.kompetisi || "";
-      document.getElementById("margin").value = p.margin || "";
       document.getElementById("tren").value = p.tren || "";
-      document.getElementById("hargaModal").value = p.hargaModal || "";
+      document.getElementById("omset").value = p.omset || "";
+      document.getElementById("pesanan").value = p.pesanan || "";
+      document.getElementById("cvr").value = p.cvr || "";
+      document.getElementById("repeat").value = p.repeat || "";
       document.getElementById("hargaJual").value = p.hargaJual || "";
-      document.getElementById("supplier").value = p.supplier || "";
       document.getElementById("catatan").value = p.catatan || "";
       document.getElementById("form-title").textContent = "✏️ Edit Produk";
       document.getElementById("btn-simpan").textContent = "Update Produk";
@@ -295,8 +220,7 @@
     function hapusProduk(id) {
       if (!confirm("Yakin mau hapus produk ini?")) return;
       produkList = produkList.filter((p) => p.id !== id);
-      simpan();
-      render();
+      simpan(); render();
     }
 
     document.getElementById("filters").addEventListener("click", (e) => {
@@ -306,47 +230,124 @@
       e.target.classList.add("active");
       render();
     });
+    document.getElementById("search").addEventListener("input", (e) => { cari = e.target.value.toLowerCase(); render(); });
+    document.getElementById("sortby").addEventListener("change", (e) => { sortBy = e.target.value; render(); });
 
+    function nilaiSort(p) {
+      if (sortBy === "omset") return p.omset || 0;
+      if (sortBy === "pesanan") return p.pesanan || 0;
+      if (sortBy === "cvr") return p.cvr || 0;
+      if (sortBy === "repeat") return p.repeat || 0;
+      return hitungSkorTotal(p);
+    }
+
+    // ===== Export ke Excel =====
     document.getElementById("btn-export").addEventListener("click", () => {
-      const blob = new Blob([JSON.stringify(produkList, null, 2)], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "riset-produk.json";
-      a.click();
-      URL.revokeObjectURL(url);
+      if (produkList.length === 0) { alert("Belum ada produk untuk diexport."); return; }
+      const baris = produkList.map((p) => {
+        const total = hitungSkorTotal(p);
+        return {
+          "Nama Produk": p.nama, "Kategori": p.kategori,
+          "Skor Permintaan": p.permintaan, "Skor Kompetisi": p.kompetisi, "Skor Tren": p.tren,
+          "Skor Total": total, "Level": tentukanLevel(total).label,
+          "Omset": p.omset, "Pesanan": p.pesanan, "CVR (%)": p.cvr, "Repeat Rate (%)": p.repeat,
+          "Harga Jual": p.hargaJual, "Catatan": p.catatan, "Fokus Perbaikan": fokusPerbaikan(p).teks,
+        };
+      });
+      const ws = XLSX.utils.json_to_sheet(baris);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Produk");
+      XLSX.writeFile(wb, "riset-produk.xlsx");
     });
 
+    // ===== Import dari Excel (mapping fleksibel) =====
+    function ambilKolom(row, kandidat) {
+      const keys = Object.keys(row);
+      for (const c of kandidat) {
+        const found = keys.find((k) => k.trim().toLowerCase() === c.toLowerCase());
+        if (found !== undefined) return row[found];
+      }
+      return "";
+    }
+    function angkaInt(v) { if (typeof v === "number") return Math.round(v); if (!v) return 0; const n = parseInt(String(v).replace(/[^0-9-]/g, ""), 10); return isNaN(n) ? 0 : n; }
+    function angkaDesimal(v) { if (typeof v === "number") return v; if (!v) return 0; const n = parseFloat(String(v).replace(/%/g, "").trim().replace(/,/g, ".").replace(/[^0-9.-]/g, "")); return isNaN(n) ? 0 : n; }
+
+    document.getElementById("btn-import").addEventListener("click", () => { document.getElementById("file-import").click(); });
+    document.getElementById("file-import").addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const wb = XLSX.read(ev.target.result, { type: "array" });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const baris = XLSX.utils.sheet_to_json(ws);
+        baris.forEach((r) => {
+          produkList.push({
+            id: Date.now() + Math.floor(Math.random() * 100000),
+            nama: String(ambilKolom(r, ["Nama Produk", "Nama Barang", "Product Name", "Produk", "Nama"]) || "Tanpa Nama"),
+            kategori: String(ambilKolom(r, ["Kategori", "Category"]) || "Fashion"),
+            permintaan: angkaInt(ambilKolom(r, ["Skor Permintaan", "Permintaan"])),
+            kompetisi: angkaInt(ambilKolom(r, ["Skor Kompetisi", "Kompetisi"])),
+            tren: angkaInt(ambilKolom(r, ["Skor Tren", "Tren"])),
+            omset: angkaInt(ambilKolom(r, ["Omset", "Omzet", "Penjualan (Rp)", "Total Penjualan", "GMV", "Penjualan"])),
+            pesanan: angkaInt(ambilKolom(r, ["Pesanan", "Jumlah Pesanan", "Produk Terjual", "Terjual", "Pesanan Siap Dikirim"])),
+            cvr: angkaDesimal(ambilKolom(r, ["CVR", "CVR (%)", "Tingkat Konversi", "Conversion Rate", "Conversion"])),
+            repeat: angkaDesimal(ambilKolom(r, ["Repeat Rate", "Repeat Rate (%)", "Tingkat Pembelian Ulang", "Repeat"])),
+            hargaJual: angkaInt(ambilKolom(r, ["Harga Jual", "Harga", "Price"])),
+            catatan: String(ambilKolom(r, ["Catatan", "Notes"]) || ""),
+          });
+        });
+        simpan(); render();
+        alert("Berhasil import " + baris.length + " produk dari Excel!");
+        e.target.value = "";
+      };
+      reader.readAsArrayBuffer(file);
+    });
+
+    // ===== Render =====
     function render() {
-      const urut = [...produkList].sort((a, b) => hitungSkorTotal(b) - hitungSkorTotal(a));
-      const hitung = { high: 0, mid: 0, low: 0, none: 0 };
-      produkList.forEach((p) => hitung[tentukanLevel(hitungSkorTotal(p)).key]++);
+      const totalOmset = produkList.reduce((s, p) => s + (p.omset || 0), 0);
+      const totalPesanan = produkList.reduce((s, p) => s + (p.pesanan || 0), 0);
+      const dinilai = produkList.filter((p) => hitungSkorTotal(p) > 0);
+      const cH = dinilai.filter((p) => tentukanLevel(hitungSkorTotal(p)).key === "high").length;
+      const cM = dinilai.filter((p) => tentukanLevel(hitungSkorTotal(p)).key === "mid").length;
+      const cL = dinilai.filter((p) => tentukanLevel(hitungSkorTotal(p)).key === "low").length;
+      const repeatVals = produkList.filter((p) => p.repeat > 0).map((p) => p.repeat);
+      const avgRepeat = repeatVals.length ? (repeatVals.reduce((s, v) => s + v, 0) / repeatVals.length) : 0;
+
       document.getElementById("stats").innerHTML =
-        '<div class="stat-box"><div class="num">' + produkList.length + '</div><div class="lbl">Total Produk</div></div>' +
-        '<div class="stat-box"><div class="num">🟢 ' + hitung.high + '</div><div class="lbl">High Level</div></div>' +
-        '<div class="stat-box"><div class="num">🟡 ' + hitung.mid + '</div><div class="lbl">Mid Level</div></div>' +
-        '<div class="stat-box"><div class="num">🔴 ' + hitung.low + '</div><div class="lbl">Low Level</div></div>';
+        '<div class="stat-box"><div class="lbl">Total Omset</div><div class="num">' + formatRupiah(totalOmset) + '</div></div>' +
+        '<div class="stat-box"><div class="lbl">Total Pesanan</div><div class="num">' + totalPesanan.toLocaleString("id-ID") + '</div></div>' +
+        '<div class="stat-box"><div class="lbl">SKU Dianalisis</div><div class="num">' + dinilai.length + '</div><div class="sub">🟢 ' + cH + ' High · 🟡 ' + cM + ' Mid · 🔴 ' + cL + ' Low</div></div>' +
+        '<div class="stat-box"><div class="lbl">Avg Repeat Rate</div><div class="num">' + avgRepeat.toFixed(1) + '%</div></div>';
+
+      let list = produkList.filter((p) => {
+        const lv = tentukanLevel(hitungSkorTotal(p)).key;
+        const okLevel = filterAktif === "all" || lv === filterAktif;
+        const okCari = !cari || (p.nama || "").toLowerCase().includes(cari);
+        return okLevel && okCari;
+      });
+      list.sort((a, b) => nilaiSort(b) - nilaiSort(a));
 
       const tbody = document.getElementById("tbody");
       tbody.innerHTML = "";
-      const tampil = urut.filter((p) => {
-        if (filterAktif === "all") return true;
-        return tentukanLevel(hitungSkorTotal(p)).key === filterAktif;
-      });
-      document.getElementById("kosong").hidden = tampil.length > 0;
+      document.getElementById("kosong").hidden = list.length > 0;
 
-      tampil.forEach((p) => {
+      list.forEach((p, i) => {
         const total = hitungSkorTotal(p);
         const level = tentukanLevel(total);
         const fokus = fokusPerbaikan(p);
         const tr = document.createElement("tr");
         tr.innerHTML =
+          '<td>' + (i + 1) + '</td>' +
           '<td><strong>' + p.nama + '</strong>' + (p.catatan ? '<br><small style="color:#888">' + p.catatan + '</small>' : "") + '</td>' +
           '<td><span class="badge ' + level.kelas + '">' + level.label + '</span></td>' +
-          '<td><strong>' + total + '</strong>/20</td>' +
+          '<td><strong>' + total + '</strong>/15</td>' +
           '<td>' + p.kategori + '</td>' +
-          '<td>' + formatRupiah(hitungProfit(p)) + '</td>' +
-          '<td>' + hitungMargin(p) + '%</td>' +
+          '<td>' + formatRupiah(p.omset) + '</td>' +
+          '<td>' + (p.pesanan || 0).toLocaleString("id-ID") + '</td>' +
+          '<td>' + (p.cvr || 0) + '%</td>' +
+          '<td>' + (p.repeat || 0) + '%</td>' +
           '<td class="tip ' + (fokus.ok ? "ok" : "") + '">' + fokus.teks + '</td>' +
           '<td class="row-actions">' +
             '<button onclick="editProduk(' + p.id + ')">Edit</button>' +
