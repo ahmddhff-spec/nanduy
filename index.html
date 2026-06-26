@@ -55,6 +55,11 @@
   </header>
 
   <section class="stats" id="stats"></section>
+<section class="card" id="ai-card" style="border:1px solid #2383e2">
+<h2>🧠 Keputusan AI Spesialis E-commerce</h2>
+<p style="font-size:13px;color:#666;margin-bottom:12px">Analisa ala spesialis e-commerce 10 tahun pengalaman — langsung kasih keputusan & prioritas aksi dari data kamu.</p>
+<div id="ai-spesialis"></div>
+</section>
 <section class="card" id="tracking-card">
 <h2>📅 Tren Antar-Minggu</h2>
 <p style="font-size:13px;color:#666;margin-bottom:12px">Rekam kondisi tiap minggu, lalu bandingin progresnya. Cocok buat ngukur "minggu ini lebih baik nggak?".</p>
@@ -561,6 +566,7 @@ stok: (function () { const v = ambilKolom(r, ["Stok", "Stock", "Sisa Stok", "Jum
       renderStrategiAds();
   renderTracking();
   renderCharts();
+  renderAiSpesialis();
     }
 
     function renderAnalisis() {
@@ -810,6 +816,82 @@ function renderCharts() {
     if (chartRoas) chartRoas.destroy();
     chartRoas = new Chart(document.getElementById("chart-roas"), { type: "bar", data: { labels: topC.map((c) => c.nama.length > 18 ? c.nama.slice(0, 18) + "..." : c.nama), datasets: [{ label: "ROAS", data: topC.map((c) => +roasOf(c).toFixed(2)), backgroundColor: topC.map((c) => roasOf(c) >= 4 ? "#1a7f37" : roasOf(c) >= 2 ? "#e0a800" : "#c1271e") }] }, options: { indexAxis: "y", plugins: { legend: { display: false } } } });
   }
+}
+function renderAiSpesialis() {
+  const el = document.getElementById("ai-spesialis");
+  if (!el) return;
+  if (produkList.length === 0) { el.innerHTML = '<p style="color:#999">Belum ada data. Import produk dulu, nanti gua kasih analisa & keputusannya.</p>'; return; }
+  hitungStatMetrik();
+  const n = produkList.length;
+  const totalOmset = produkList.reduce((s, p) => s + (p.omset || 0), 0);
+  const lvlOf = (p) => tentukanLevel(hitungSkorTotal(p)).key;
+  const cHigh = produkList.filter((p) => lvlOf(p) === "high").length;
+  const cMid = produkList.filter((p) => lvlOf(p) === "mid").length;
+  const mati = produkList.filter((p) => (p.pesanan || 0) === 0 && (p.omset || 0) === 0);
+  const cvrRendah = produkList.filter((p) => p.cvr > 0 && p.cvr < 2);
+  const repeatVals = produkList.filter((p) => p.repeat > 0).map((p) => p.repeat);
+  const avgRepeat = repeatVals.length ? repeatVals.reduce((s, v) => s + v, 0) / repeatVals.length : 0;
+  const totSpend = iklanList.reduce((s, c) => s + (c.biaya || 0), 0);
+  const totAdSales = iklanList.reduce((s, c) => s + (c.omzet || 0), 0);
+  const roasGlobal = totSpend > 0 ? totAdSales / totSpend : 0;
+  const roasOfC = (c) => (c.roas && c.roas > 0) ? c.roas : ((c.biaya || 0) > 0 ? (c.omzet || 0) / c.biaya : 0);
+  const boncos = iklanList.filter((c) => roasOfC(c) < 2 && (c.biaya || 0) > 0);
+  const spendBoncos = boncos.reduce((s, c) => s + (c.biaya || 0), 0);
+  const untung = iklanList.filter((c) => roasOfC(c) >= 4);
+  const adaStok = adaDataStok();
+  const stokHabisLaris = produkList.filter((p) => p.stok != null && p.stok === 0 && (p.pesanan || 0) > 0);
+  const adaKualitas = produkList.some((p) => (p.cvr || 0) > 0 || (p.repeat || 0) > 0);
+  const gems = produkList.map((p) => {
+    const pOmset = persentil(p.omset || 0, statMetrik.omset);
+    const qNorm = adaKualitas ? Math.max(persentil(p.cvr || 0, statMetrik.cvr), persentil(p.repeat || 0, statMetrik.repeat)) : persentil(p.pesanan || 0, statMetrik.pesanan);
+    return { p: p, skor: qNorm * (1 - pOmset), qNorm: qNorm, pOmset: pOmset };
+  }).filter((g) => stokSiap(g.p) && g.qNorm >= 0.7 && g.pOmset <= 0.4 && g.skor > 0);
+  const sortOmset = produkList.slice().sort((a, b) => (b.omset || 0) - (a.omset || 0));
+  const juara = sortOmset[0];
+  const konsentrasi = totalOmset > 0 ? (juara.omset || 0) / totalOmset : 0;
+  let anjlok = [];
+  if (snapshots.length > 0) {
+    const last = snapshots[snapshots.length - 1];
+    produkList.forEach((p) => { const prev = last.produk[normNama(p.nama)]; if (prev && (prev.omset || 0) > 0 && (p.omset || 0) < (prev.omset || 0) * 0.8) anjlok.push(p.nama); });
+  }
+  let skorSehat = 0; const komp = [];
+  let sAds; if (totSpend === 0) sAds = 12; else sAds = Math.max(0, Math.min(25, (roasGlobal / 5) * 25));
+  skorSehat += sAds; komp.push(["Profitabilitas iklan", sAds, 25]);
+  const sPort = ((cHigh + cMid * 0.5) / n) * 25;
+  skorSehat += sPort; komp.push(["Kualitas portfolio", sPort, 25]);
+  const sAkt = (1 - mati.length / n) * 20;
+  skorSehat += sAkt; komp.push(["Aktivasi produk", sAkt, 20]);
+  const sLoy = Math.min(15, (avgRepeat / 30) * 15);
+  skorSehat += sLoy; komp.push(["Loyalitas pelanggan", sLoy, 15]);
+  let sStok; if (!adaStok) sStok = 8; else { const inStok = produkList.filter((p) => (p.stok || 0) > 0).length; sStok = (inStok / n) * 15; }
+  skorSehat += sStok; komp.push(["Ketersediaan stok", sStok, 15]);
+  skorSehat = Math.round(skorSehat);
+  let sehatLabel, sehatWarna;
+  if (skorSehat >= 75) { sehatLabel = "SEHAT"; sehatWarna = "#1a7f37"; } else if (skorSehat >= 55) { sehatLabel = "CUKUP"; sehatWarna = "#9a6700"; } else if (skorSehat >= 35) { sehatLabel = "WASPADA"; sehatWarna = "#d97706"; } else { sehatLabel = "KRITIS"; sehatWarna = "#c1271e"; }
+  const keputusan = [];
+  if (stokHabisLaris.length > 0) keputusan.push({ p: 1, lbl: "URGENT", warna: "#c1271e", judul: "Restock sekarang - ada penjualan yang bocor", aksi: "Segera restock " + stokHabisLaris.length + " produk yang stoknya HABIS padahal masih ada permintaan: " + stokHabisLaris.slice(0, 3).map((p) => p.nama).join(", ") + (stokHabisLaris.length > 3 ? ", dll" : "") + ".", alasan: "Produk laris yang kehabisan stok = uang yang harusnya masuk tapi hilang tiap hari, plus ranking listing ikut turun.", dampak: "Balikin omset yang bocor & jaga posisi listing." });
+  if (spendBoncos > 0 && boncos.length > 0) keputusan.push({ p: 1, lbl: "URGENT", warna: "#c1271e", judul: "Stop pendarahan budget iklan", aksi: "Pause / pangkas " + boncos.length + " campaign boncos (ROAS < 2) dan realokasi " + formatRupiah(spendBoncos) + " ke campaign untung & hidden gems.", alasan: "Campaign ini bakar " + formatRupiah(spendBoncos) + " dengan return di bawah modal - tiap hari jalan makin rugi.", dampak: "Hemat " + formatRupiah(spendBoncos) + " & ROAS rata-rata naik." });
+  if (untung.length > 0) keputusan.push({ p: 2, lbl: "GAS", warna: "#1a7f37", judul: "Scale-up mesin uang", aksi: "Naikin budget bertahap (+20%/minggu) di " + untung.length + " campaign untung (ROAS >= 4) selama ROAS tetap stabil.", alasan: "Ini campaign yang udah kebukti profit - di sinilah modal paling aman digandain.", dampak: "Pertumbuhan omset tercepat dengan risiko rendah." });
+  else if (cHigh > 0) keputusan.push({ p: 2, lbl: "GAS", warna: "#1a7f37", judul: "Dorong produk High Level", aksi: "Fokusin iklan & stok ke " + cHigh + " produk High Level, jangan sampai kehabisan stok.", alasan: "Produk papan atas ini penyumbang omset utama toko.", dampak: "Amanin & gandain revenue inti." });
+  if (gems.length > 0) keputusan.push({ p: 2, lbl: "PELUANG", warna: "#6b21a8", judul: "Angkat hidden gems", aksi: "Alokasi budget iklan khusus buat " + gems.length + " hidden gems: " + gems.slice(0, 3).map((g) => g.p.nama).join(", ") + (gems.length > 3 ? ", dll" : "") + ".", alasan: "Sinyal konversi/loyalitas kuat tapi omset masih kecil - tinggal dikasih exposure.", dampak: "Kandidat produk juara berikutnya." });
+  if (cvrRendah.length > 0) keputusan.push({ p: 3, lbl: "PERBAIKI", warna: "#9a6700", judul: "Benahi listing CVR rendah", aksi: "Revisi foto utama, judul + keyword, harga, & deskripsi " + cvrRendah.length + " produk dengan CVR < 2% SEBELUM gas iklan.", alasan: "Banyak yang lihat tapi sedikit yang beli - ngiklanin listing lemah = buang duit.", dampak: "Konversi naik, tiap klik jadi lebih bernilai." });
+  if (mati.length > 0) keputusan.push({ p: 3, lbl: "EVALUASI", warna: "#c1271e", judul: "Bersihin produk mati", aksi: "Kasih tenggat 2-4 minggu buat " + mati.length + " produk tanpa penjualan; kalau tetap sepi, drop & alihin energi + budget.", alasan: "Produk nol penjualan cuma nambah beban kelola tanpa hasil.", dampak: "Fokus & modal balik ke produk produktif." });
+  if (konsentrasi >= 0.4 && n >= 3) keputusan.push({ p: 3, lbl: "RISIKO", warna: "#d97706", judul: "Kurangi ketergantungan ke 1 produk", aksi: "'" + juara.nama + "' nyumbang " + Math.round(konsentrasi * 100) + "% total omset. Bangun 2-3 produk pendukung dari Mid Level / hidden gems.", alasan: "Kalau produk ini bermasalah (stok/iklan/kompetitor), omset toko langsung jatuh.", dampak: "Bisnis lebih stabil & tahan guncangan." });
+  if (anjlok.length > 0) keputusan.push({ p: 2, lbl: "WASPADA", warna: "#c1271e", judul: "Selidiki produk yang anjlok", aksi: "Cek penyebab omset turun >20% di: " + anjlok.slice(0, 3).join(", ") + (anjlok.length > 3 ? ", dll" : "") + " (harga? stok? iklan dimatiin? kompetitor?).", alasan: "Penurunan tajam biasanya ada akar masalah yang masih bisa dibalikin kalau cepat ditangani.", dampak: "Cegah omset bocor lebih jauh." });
+  keputusan.sort((a, b) => a.p - b.p);
+  const pct = (x, max) => Math.round(x / max * 100);
+  let html = '';
+  html += '<div style="display:flex;gap:20px;flex-wrap:wrap;align-items:center;background:linear-gradient(135deg,#f8fbff,#eef4ff);border-radius:10px;padding:16px;margin-bottom:16px">';
+  html += '<div style="text-align:center;min-width:120px"><div style="font-size:42px;font-weight:800;color:' + sehatWarna + ';line-height:1">' + skorSehat + '</div><div style="font-size:12px;color:#666">Skor Kesehatan</div><div style="display:inline-block;margin-top:4px;font-size:11px;font-weight:700;color:#fff;background:' + sehatWarna + ';padding:2px 10px;border-radius:20px">' + sehatLabel + '</div></div>';
+  html += '<div style="flex:1;min-width:220px">' + komp.map((k) => '<div style="margin-bottom:5px"><div style="display:flex;justify-content:space-between;font-size:11px;color:#555"><span>' + k[0] + '</span><span>' + pct(k[1], k[2]) + '%</span></div><div style="background:#e3e8ef;border-radius:6px;height:6px;overflow:hidden"><div style="width:' + pct(k[1], k[2]) + '%;height:100%;background:' + sehatWarna + '"></div></div></div>').join('') + '</div>';
+  html += '</div>';
+  const diagnosa = "Sebagai spesialis, kondisi toko kamu <strong>" + sehatLabel + "</strong>. " + (skorSehat >= 75 ? "Fundamental kuat - sekarang waktunya agresif scale-up sambil jaga stok." : skorSehat >= 55 ? "Pondasi udah lumayan, tinggal rapikan kebocoran (iklan boncos / listing lemah) sebelum gas budget." : "Ada beberapa kebocoran serius yang wajib dibenahi dulu sebelum nambah budget - fokus ke yang URGENT di bawah.");
+  html += '<div style="background:#fff;border-left:4px solid ' + sehatWarna + ';padding:10px 14px;margin-bottom:16px;font-size:13px;line-height:1.6">' + diagnosa + '</div>';
+  if (keputusan.length > 0) { html += '<h3 style="font-size:14px;margin-bottom:8px">🎯 3 Langkah Decisive Minggu Ini</h3>'; html += '<ol style="margin:0 0 18px 18px;font-size:13px;line-height:1.8">' + keputusan.slice(0, 3).map((k) => '<li><strong>' + k.judul + '</strong> - ' + k.aksi + '</li>').join('') + '</ol>'; }
+  html += '<h3 style="font-size:14px;margin-bottom:10px">Daftar Keputusan (urut prioritas)</h3>';
+  if (keputusan.length === 0) { html += '<p style="color:#1a7f37;font-size:13px">Mantap - nggak ada masalah mendesak. Pertahankan ritme & terus pantau tiap minggu.</p>'; }
+  else html += keputusan.map((k) => '<div style="border:1px solid #eee;border-left:4px solid ' + k.warna + ';border-radius:0 8px 8px 0;padding:10px 14px;margin-bottom:10px"><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap"><span style="font-size:10px;font-weight:700;color:#fff;background:' + k.warna + ';padding:2px 8px;border-radius:20px">' + k.lbl + '</span><strong style="font-size:14px">' + k.judul + '</strong></div><div style="font-size:13px;margin-bottom:4px">' + k.aksi + '</div><div style="font-size:12px;color:#777"><strong>Kenapa:</strong> ' + k.alasan + '</div><div style="font-size:12px;color:#1a7f37"><strong>Dampak:</strong> ' + k.dampak + '</div></div>').join('');
+  el.innerHTML = html;
 }
 function renderStrategiAds() {
       const el = document.getElementById('ads');
