@@ -66,6 +66,12 @@
     <div id="gems"></div>
   </section>
 
+  <section class="card" id="iklan-card">
+    <h2>📈 Analisis Iklan (Ads)</h2>
+    <p style="font-size:13px;color:#666;margin-bottom:12px">Performa iklan per produk: ROAS, ACOS, biaya, & rekomendasi. Import laporan iklan dulu (tombol 📣 di bawah).</p>
+    <div id="iklan"></div>
+  </section>
+
   <section class="card" id="laporan-card">
     <h2>📋 Laporan Mingguan (buat Meeting)</h2>
     <p style="font-size:13px;color:#666;margin-bottom:12px">Ringkasan sales siap-tempel ke WhatsApp / Slack / Notion.</p>
@@ -103,6 +109,10 @@
         <label>Pesanan <input type="number" id="pesanan" min="0" /></label>
         <label>CVR (%) <input type="number" id="cvr" step="0.01" min="0" /></label>
         <label>Repeat Rate (%) <input type="number" id="repeat" step="0.01" min="0" /></label>
+        <label>Biaya Iklan (Rp) <input type="number" id="biayaIklan" min="0" /></label>
+        <label>Omset dari Iklan (Rp) <input type="number" id="omsetIklan" min="0" /></label>
+        <label>Klik Iklan <input type="number" id="klik" min="0" /></label>
+        <label>Tampilan Iklan <input type="number" id="tampilan" min="0" /></label>
         <label>Harga Jual (Rp) <input type="number" id="hargaJual" min="0" /></label>
         <label>Catatan <input type="text" id="catatan" /></label>
       </div>
@@ -135,7 +145,7 @@
     <table id="tabel">
       <thead><tr>
         <th>#</th><th>Produk</th><th>Level</th><th>Skor</th><th>Kategori</th>
-        <th>Omset</th><th>Pesanan</th><th>CVR</th><th>Repeat</th><th>Fokus Perbaikan</th><th></th>
+        <th>Omset</th><th>Pesanan</th><th>CVR</th><th>Repeat</th><th>ROAS</th><th>Fokus Perbaikan</th><th></th>
       </tr></thead>
       <tbody id="tbody"></tbody>
     </table>
@@ -144,7 +154,9 @@
 
   <footer>
     <input type="file" id="file-import" accept=".xlsx,.xls" hidden />
-    <button id="btn-import" class="ghost">⬆️ Import Excel</button>
+    <input type="file" id="file-import-ads" accept=".xlsx,.xls" hidden />
+    <button id="btn-import" class="ghost">⬆️ Import Produk</button>
+    <button id="btn-import-ads" class="ghost">📣 Import Data Iklan</button>
     <button id="btn-export" class="ghost">⬇️ Export Excel</button>
     <button id="btn-reset" class="ghost">🗑️ Hapus Semua Data</button>
   </footer>
@@ -203,6 +215,8 @@
       if (n >= 1e3) return "Rp " + (n / 1e3).toFixed(1).replace(".0", "") + "rb";
       return "Rp " + n;
     }
+    function roasNilai(p) { return (p.roas && p.roas > 0) ? p.roas : ((p.biayaIklan || 0) > 0 ? (p.omsetIklan || 0) / p.biayaIklan : 0); }
+    function roasTxt(p) { const r = roasNilai(p); return r > 0 ? r.toFixed(2) + "x" : "-"; }
 
     function simpan() { localStorage.setItem(STORAGE_KEY, JSON.stringify(produkList)); }
 
@@ -219,6 +233,11 @@
         pesanan: num("pesanan"),
         cvr: num("cvr"),
         repeat: num("repeat"),
+        biayaIklan: num("biayaIklan"),
+        omsetIklan: num("omsetIklan"),
+        klik: num("klik"),
+        tampilan: num("tampilan"),
+        roas: (num("biayaIklan") > 0 ? +((num("omsetIklan") / num("biayaIklan")).toFixed(2)) : 0),
         hargaJual: num("hargaJual"),
         catatan: document.getElementById("catatan").value.trim(),
       };
@@ -254,6 +273,10 @@
       document.getElementById("pesanan").value = p.pesanan || "";
       document.getElementById("cvr").value = p.cvr || "";
       document.getElementById("repeat").value = p.repeat || "";
+      document.getElementById("biayaIklan").value = p.biayaIklan || "";
+      document.getElementById("omsetIklan").value = p.omsetIklan || "";
+      document.getElementById("klik").value = p.klik || "";
+      document.getElementById("tampilan").value = p.tampilan || "";
       document.getElementById("hargaJual").value = p.hargaJual || "";
       document.getElementById("catatan").value = p.catatan || "";
       document.getElementById("form-title").textContent = "✏️ Edit Produk";
@@ -296,6 +319,7 @@
           "Skor Permintaan": p.permintaan, "Skor Kompetisi": p.kompetisi, "Skor Tren": p.tren,
           "Skor Total": total, "Level": tentukanLevel(total).label,
           "Omset": p.omset, "Pesanan": p.pesanan, "CVR (%)": p.cvr, "Repeat Rate (%)": p.repeat,
+          "Biaya Iklan": p.biayaIklan || 0, "Omset Iklan": p.omsetIklan || 0, "ROAS": roasNilai(p), "Klik": p.klik || 0, "Tampilan": p.tampilan || 0,
           "Harga Jual": p.hargaJual, "Catatan": p.catatan, "Fokus Perbaikan": fokusPerbaikan(p).teks,
         };
       });
@@ -359,6 +383,46 @@
       reader.readAsArrayBuffer(file);
     });
 
+    // ===== Import Data Iklan (cocokin by nama produk) =====
+    function normNama(s) { return String(s || "").trim().toLowerCase().replace(/\s+/g, " "); }
+    document.getElementById("btn-import-ads").addEventListener("click", () => {
+      if (produkList.length === 0) { alert("Import data produk dulu ya, baru import data iklan biar bisa dicocokin per produk."); return; }
+      document.getElementById("file-import-ads").click();
+    });
+    document.getElementById("file-import-ads").addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const wb = XLSX.read(ev.target.result, { type: "array" });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const baris = XLSX.utils.sheet_to_json(ws);
+        const peta = {};
+        produkList.forEach((p) => { peta[normNama(p.nama)] = p; });
+        let cocok = 0, takCocok = 0; const gagal = [];
+        baris.forEach((r) => {
+          const nama = ambilKolom(r, ["Nama Produk", "Nama Barang", "Product Name", "Produk", "Nama"]);
+          const key = normNama(nama);
+          let p = peta[key];
+          if (!p && key) { p = produkList.find((x) => { const n = normNama(x.nama); return n && (n.includes(key) || key.includes(n)); }); }
+          if (!p) { takCocok++; if (nama) gagal.push(String(nama)); return; }
+          p.biayaIklan = angkaInt(ambilKolom(r, ["Biaya Iklan", "Biaya", "Ad Spend", "Spend", "Pengeluaran", ["biaya", "iklan"]]));
+          p.omsetIklan = angkaInt(ambilKolom(r, ["Omset Iklan", "Penjualan dari Iklan", "Penjualan Iklan", "Ad Sales", "GMV Iklan", "Omzet Iklan", ["penjualan", "iklan"], ["omset", "iklan"]]));
+          p.klik = angkaInt(ambilKolom(r, ["Klik", "Clicks", "Jumlah Klik", ["klik"]]));
+          p.tampilan = angkaInt(ambilKolom(r, ["Tampilan", "Dilihat", "Impression", "Impressions", "Iklan Dilihat", ["dilihat"], ["impression"]]));
+          const roasRaw = angkaDesimal(ambilKolom(r, ["ROAS", "Roas", ["roas"]]));
+          p.roas = roasRaw > 0 ? roasRaw : (p.biayaIklan > 0 ? +((p.omsetIklan / p.biayaIklan).toFixed(2)) : 0);
+          cocok++;
+        });
+        simpan(); render();
+        let msg = "Data iklan kecocokin ke " + cocok + " produk.";
+        if (takCocok > 0) msg += " " + takCocok + " baris iklan TIDAK ketemu produknya (nama beda). Contoh: " + gagal.slice(0, 3).join(", ");
+        alert(msg);
+        e.target.value = "";
+      };
+      reader.readAsArrayBuffer(file);
+    });
+
     // ===== Render =====
     function render() {
       hitungStatMetrik();
@@ -404,6 +468,7 @@
           '<td>' + (p.pesanan || 0).toLocaleString("id-ID") + '</td>' +
           '<td>' + (p.cvr || 0) + '%</td>' +
           '<td>' + (p.repeat || 0) + '%</td>' +
+          '<td>' + roasTxt(p) + '</td>' +
           '<td class="tip ' + (fokus.ok ? "ok" : "") + '">' + fokus.teks + '</td>' +
           '<td class="row-actions">' +
             '<button onclick="editProduk(' + p.id + ')">Edit</button>' +
@@ -414,6 +479,7 @@
 
       renderAnalisis();
       renderHiddenGems();
+      renderIklan();
       renderLaporan();
       renderStrategiAds();
     }
@@ -484,6 +550,33 @@
       }).join("");
     }
 
+    function renderIklan() {
+      const el = document.getElementById("iklan");
+      const roasOf = (p) => (p.roas && p.roas > 0) ? p.roas : ((p.biayaIklan || 0) > 0 ? (p.omsetIklan || 0) / p.biayaIklan : 0);
+      const adaIklan = produkList.filter((p) => (p.biayaIklan || 0) > 0 || (p.omsetIklan || 0) > 0);
+      if (adaIklan.length === 0) { el.innerHTML = '<p style="color:#999">Belum ada data iklan. Klik <strong>📣 Import Data Iklan</strong> di bawah (laporan iklan dicocokin otomatis by nama produk). Setelah ada data, ROAS/ACOS & rekomendasi muncul di sini.</p>'; return; }
+      const totalSpend = produkList.reduce((s, p) => s + (p.biayaIklan || 0), 0);
+      const totalAdSales = produkList.reduce((s, p) => s + (p.omsetIklan || 0), 0);
+      const roasGlobal = totalSpend > 0 ? totalAdSales / totalSpend : 0;
+      const acosGlobal = totalAdSales > 0 ? (totalSpend / totalAdSales) * 100 : 0;
+      const totalKlik = produkList.reduce((s, p) => s + (p.klik || 0), 0);
+      const totalTampil = produkList.reduce((s, p) => s + (p.tampilan || 0), 0);
+      const ctrGlobal = totalTampil > 0 ? (totalKlik / totalTampil) * 100 : 0;
+      const untung = adaIklan.filter((p) => roasOf(p) >= 4).sort((a, b) => roasOf(b) - roasOf(a));
+      const sedang = adaIklan.filter((p) => roasOf(p) >= 2 && roasOf(p) < 4).sort((a, b) => roasOf(b) - roasOf(a));
+      const boncos = adaIklan.filter((p) => roasOf(p) > 0 && roasOf(p) < 2).sort((a, b) => roasOf(a) - roasOf(b));
+      const spendBoncos = boncos.reduce((s, p) => s + (p.biayaIklan || 0), 0);
+      const box = (lbl, val, sub) => '<div class="stat-box"><div class="lbl">' + lbl + '</div><div class="num">' + val + '</div>' + (sub ? '<div class="sub">' + sub + '</div>' : '') + '</div>';
+      let html = '<div class="stats" style="margin-bottom:16px">' + box("Total Biaya Iklan", formatRupiah(totalSpend), totalKlik.toLocaleString("id-ID") + " klik") + box("Omset dari Iklan", formatRupiah(totalAdSales), "CTR " + ctrGlobal.toFixed(2) + "%") + box("ROAS Keseluruhan", roasGlobal.toFixed(2) + "x", roasGlobal >= 4 ? "🟢 Sehat" : roasGlobal >= 2 ? "🟡 Cukup" : "🔴 Boncos") + box("ACOS Keseluruhan", acosGlobal.toFixed(1) + "%", "biaya / omset iklan") + '</div>';
+      const baris = (arr, warna, label, tujuan) => { if (arr.length === 0) return ''; const items = arr.slice(0, 6).map((p) => '<li><strong>' + p.nama + '</strong> — ROAS ' + roasOf(p).toFixed(2) + 'x · biaya ' + formatRupiah(p.biayaIklan || 0) + ' · omset iklan ' + formatRupiah(p.omsetIklan || 0) + '</li>').join(""); return '<div style="border-left:4px solid ' + warna + ';padding:10px 14px;margin-bottom:12px;border-radius:0 8px 8px 0;background:#fafafa"><strong style="color:' + warna + '">' + label + ' (' + arr.length + ')</strong><div style="font-size:12px;color:#666;margin:3px 0 6px">' + tujuan + '</div><ul style="margin:0 0 0 18px;font-size:12px;line-height:1.7">' + items + '</ul></div>'; };
+      html += baris(untung, "#1a7f37", "🟢 Iklan Untung (ROAS ≥ 4)", "Gas! Naikin budget bertahap selama ROAS stabil — ini mesin uang kamu.");
+      html += baris(sedang, "#9a6700", "🟡 Iklan Cukup (ROAS 2-4)", "Optimasi: rapikan keyword, pause keyword boros, perbaiki halaman produk biar ROAS naik.");
+      html += baris(boncos, "#c1271e", "🔴 Iklan Boncos (ROAS < 2)", "Rugi: turunin/pause budget, benahi listing & targeting dulu. Total biaya nyangkut: " + formatRupiah(spendBoncos) + ".");
+      const belumIklan = produkList.filter((p) => (p.biayaIklan || 0) === 0 && (p.omset || 0) > 0).sort((a, b) => (b.omset || 0) - (a.omset || 0));
+      if (belumIklan.length > 0) { html += '<div style="border-left:4px solid #2383e2;padding:10px 14px;border-radius:0 8px 8px 0;background:#f0f7ff"><strong style="color:#2383e2">🔵 Laku tapi Belum Diiklanin (' + belumIklan.length + ')</strong><div style="font-size:12px;color:#666;margin:3px 0 6px">Udah jualan organik — dikasih iklan bisa scale lebih cepat. Mulai budget kecil.</div><ul style="margin:0 0 0 18px;font-size:12px;line-height:1.7">' + belumIklan.slice(0, 5).map((p) => '<li><strong>' + p.nama + '</strong> — omset organik ' + formatRupiah(p.omset || 0) + '</li>').join("") + '</ul></div>'; }
+      el.innerHTML = html;
+    }
+
     function renderLaporan() {
       const el = document.getElementById("laporan");
       const tgl = new Date().toLocaleDateString("id-ID", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
@@ -526,6 +619,17 @@
       t += "HIDDEN GEMS (POTENSI DIDORONG)\n";
       if (gems.length === 0) { t += "- Belum ada terdeteksi\n"; } else { gems.forEach((g, i) => { t += (i + 1) + ". " + g.p.nama + " - omset " + formatRupiah(g.p.omset || 0) + "\n"; }); }
       t += "\n";
+      const totSpend = produkList.reduce((s, p) => s + (p.biayaIklan || 0), 0);
+      const totAdSales = produkList.reduce((s, p) => s + (p.omsetIklan || 0), 0);
+      if (totSpend > 0) {
+        const roasOfR = (p) => (p.roas && p.roas > 0) ? p.roas : ((p.biayaIklan || 0) > 0 ? (p.omsetIklan || 0) / p.biayaIklan : 0);
+        const boncosR = produkList.filter((p) => (p.biayaIklan || 0) > 0 && roasOfR(p) < 2);
+        t += "PERFORMA IKLAN\n";
+        t += "- Total Biaya Iklan : " + formatRupiah(totSpend) + "\n";
+        t += "- Omset dari Iklan  : " + formatRupiah(totAdSales) + "\n";
+        t += "- ROAS Keseluruhan  : " + (totAdSales / totSpend).toFixed(2) + "x\n";
+        t += "- Iklan Boncos      : " + boncosR.length + " produk (ROAS < 2, perlu dibenahi)\n\n";
+      }
       t += "PERLU PERHATIAN\n";
       t += "- " + perhatian.length + " produk belum ada penjualan (evaluasi listing/iklan atau drop)\n\n";
       t += "REKOMENDASI MINGGU INI\n";
@@ -547,8 +651,12 @@
       hitungStatMetrik();
       const adaKualitas = produkList.some((p) => (p.cvr || 0) > 0 || (p.repeat || 0) > 0);
       const bucketOf = (p) => {
+        const adaIklanP = (p.biayaIklan || 0) > 0;
+        const roas = (p.roas && p.roas > 0) ? p.roas : (adaIklanP ? (p.omsetIklan || 0) / p.biayaIklan : 0);
         const pOmset = persentil(p.omset || 0, statMetrik.omset);
         const adaJual = (p.omset || 0) > 0 || (p.pesanan || 0) > 0;
+        if (adaIklanP && roas >= 4) return 'scale';
+        if (adaIklanP && roas > 0 && roas < 2) return 'optimize';
         if (!adaJual) return 'test';
         if (pOmset >= 0.7 || tentukanLevel(hitungSkorTotal(p)).key === 'high') return 'scale';
         const qNorm = adaKualitas ? Math.max(persentil(p.cvr || 0, statMetrik.cvr), persentil(p.repeat || 0, statMetrik.repeat)) : persentil(p.pesanan || 0, statMetrik.pesanan);
