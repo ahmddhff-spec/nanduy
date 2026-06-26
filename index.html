@@ -358,7 +358,15 @@
       const isCsv = (file.name.split(".").pop() || "").toLowerCase() === "csv";
       const reader = new FileReader();
       reader.onload = (ev) => {
-        const wb = XLSX.read(ev.target.result, { type: isCsv ? "string" : "array" });
+        let wb;
+        if (isCsv) {
+          const txt = ev.target.result;
+          const headerLine = txt.split(/\r?\n/)[0] || "";
+          const fs = (headerLine.split(";").length > headerLine.split(",").length) ? ";" : ",";
+          wb = XLSX.read(txt, { type: "string", FS: fs });
+        } else {
+          wb = XLSX.read(ev.target.result, { type: "array" });
+        }
         const ws = wb.Sheets[wb.SheetNames[0]];
         const baris = XLSX.utils.sheet_to_json(ws);
         baris.forEach((r) => {
@@ -396,14 +404,22 @@
       const isCsv = (file.name.split(".").pop() || "").toLowerCase() === "csv";
       const reader = new FileReader();
       reader.onload = (ev) => {
-        const wb = XLSX.read(ev.target.result, { type: isCsv ? "string" : "array" });
+        let wb;
+        if (isCsv) {
+          const txt = ev.target.result;
+          const headerLine = txt.split(/\r?\n/)[0] || "";
+          const fs = (headerLine.split(";").length > headerLine.split(",").length) ? ";" : ",";
+          wb = XLSX.read(txt, { type: "string", FS: fs });
+        } else {
+          wb = XLSX.read(ev.target.result, { type: "array" });
+        }
         const ws = wb.Sheets[wb.SheetNames[0]];
         const baris = XLSX.utils.sheet_to_json(ws);
         const peta = {};
         produkList.forEach((p) => { peta[normNama(p.nama)] = p; });
         let cocok = 0, takCocok = 0; const gagal = [];
         baris.forEach((r) => {
-          const nama = ambilKolom(r, ["Nama Produk", "Nama Barang", "Product Name", "Produk", "Nama"]);
+          const nama = ambilKolom(r, ["Nama Produk", "Nama Barang", "Product Name", "Produk", "Nama", ["nama", "produk"], ["product", "name"], ["nama"], ["product"]]);
           const key = normNama(nama);
           let p = peta[key];
           if (!p && key) { p = produkList.find((x) => { const n = normNama(x.nama); return n && (n.includes(key) || key.includes(n)); }); }
@@ -418,7 +434,12 @@
         });
         simpan(); render();
         let msg = "Data iklan kecocokin ke " + cocok + " produk.";
-        if (takCocok > 0) msg += " " + takCocok + " baris iklan TIDAK ketemu produknya (nama beda). Contoh: " + gagal.slice(0, 3).join(", ");
+        if (takCocok > 0) msg += " " + takCocok + " baris iklan TIDAK ketemu produknya. Contoh nama di file iklan: " + gagal.slice(0, 3).join(" | ");
+        if (cocok === 0 && baris.length > 0) {
+          msg += "\n\nKolom kebaca di file iklan: " + Object.keys(baris[0]).join(" | ");
+          msg += "\n\nNama produk di tools: " + produkList.slice(0, 3).map((p) => p.nama).join(" | ");
+          msg += "\n\nKalau kolom di atas nyatu jadi satu kolom panjang = pemisah CSV beda. Screenshot pesan ini & kirim ke aku ya.";
+        }
         alert(msg);
         e.target.value = "";
       };
