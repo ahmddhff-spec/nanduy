@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Riset Produk Potensial</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      background: #f4f5f7;
+      color: #1a1a1a;
+      padding: 24px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    header { text-align: center; margin-bottom: 24px; }
+    header h1 { font-size: 28px; }
+    header p { color: #666; margin-top: 4px; }
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      margin-bottom: 20px;
+    }
+    h2 { font-size: 18px; margin-bottom: 16px; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+    }
+    label { display: flex; flex-direction: column; font-size: 13px; color: #555; gap: 4px; }
+    input, select {
+      padding: 8px 10px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+    .actions { margin-top: 16px; display: flex; gap: 10px; }
+    button {
+      background: #2383e2;
+      color: #fff;
+      border: none;
+      padding: 9px 16px;
+      border-radius: 8px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    button:hover { opacity: 0.9; }
+    button.ghost { background: #eee; color: #333; }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .stat-box {
+      background: #fff;
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+    .stat-box .num { font-size: 26px; font-weight: 700; }
+    .stat-box .lbl { font-size: 12px; color: #666; }
+    .filters { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+    .filters button { background: #eee; color: #333; }
+    .filters button.active { background: #2383e2; color: #fff; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid #eee; vertical-align: top; }
+    th { font-size: 12px; text-transform: uppercase; color: #888; }
+    .badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .level-high { background: #d6f5dd; color: #1a7f37; }
+    .level-mid  { background: #fdf3d0; color: #9a6700; }
+    .level-low  { background: #fbdcdc; color: #c1271e; }
+    .level-none { background: #eee; color: #888; }
+    .tip { font-size: 12px; color: #b35900; }
+    .tip.ok { color: #1a7f37; }
+    .row-actions button { background: none; color: #2383e2; padding: 2px 6px; font-size: 13px; }
+    .row-actions button.del { color: #c1271e; }
+    .empty { text-align: center; color: #999; padding: 20px; }
+    footer { text-align: center; }
+    @media (max-width: 700px) {
+      .stats { grid-template-columns: repeat(2, 1fr); }
+      table { font-size: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🛒 Riset Produk Potensial</h1>
+    <p>Cek potensi produk: High / Mid / Low Level otomatis dari skor</p>
+  </header>
+
+  <section class="stats" id="stats"></section>
+
+  <section class="card">
+    <h2 id="form-title">➕ Tambah Produk</h2>
+    <form id="form-produk">
+      <div class="grid">
+        <label>Nama Produk
+          <input type="text" id="nama" required placeholder="contoh: Mini Portable Blender" />
+        </label>
+        <label>Kategori
+          <select id="kategori">
+            <option>Fashion</option>
+            <option>Elektronik</option>
+            <option>Gadget &amp; Aksesoris</option>
+            <option>Kecantikan</option>
+            <option>Kesehatan</option>
+            <option>Rumah Tangga</option>
+            <option>Makanan &amp; Minuman</option>
+            <option>Hobi &amp; Mainan</option>
+          </select>
+        </label>
+        <label>Skor Permintaan (1-5)
+          <input type="number" id="permintaan" min="1" max="5" />
+        </label>
+        <label>Skor Kompetisi (1-5)
+          <input type="number" id="kompetisi" min="1" max="5" />
+        </label>
+        <label>Skor Margin (1-5)
+          <input type="number" id="margin" min="1" max="5" />
+        </label>
+        <label>Skor Tren (1-5)
+          <input type="number" id="tren" min="1" max="5" />
+        </label>
+        <label>Harga Modal (Rp)
+          <input type="number" id="hargaModal" min="0" />
+        </label>
+        <label>Harga Jual (Rp)
+          <input type="number" id="hargaJual" min="0" />
+        </label>
+        <label>Supplier
+          <input type="text" id="supplier" />
+        </label>
+        <label>Catatan
+          <input type="text" id="catatan" />
+        </label>
+      </div>
+      <div class="actions">
+        <button type="submit" id="btn-simpan">Simpan Produk</button>
+        <button type="button" id="btn-batal" class="ghost" hidden>Batal</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="filters" id="filters">
+    <button data-filter="all" class="active">Semua</button>
+    <button data-filter="high">🟢 High</button>
+    <button data-filter="mid">🟡 Mid</button>
+    <button data-filter="low">🔴 Low</button>
+  </section>
+
+  <section class="card">
+    <table id="tabel">
+      <thead>
+        <tr>
+          <th>Produk</th>
+          <th>Level</th>
+          <th>Skor</th>
+          <th>Kategori</th>
+          <th>Profit</th>
+          <th>Margin</th>
+          <th>Fokus Perbaikan</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    <p id="kosong" class="empty" hidden>Belum ada produk. Tambahkan dulu di atas 👆</p>
+  </section>
+
+  <footer>
+    <button id="btn-export" class="ghost">⬇️ Export JSON</button>
+  </footer>
+
+  <script>
+    // ===== Penyimpanan & State =====
+    const STORAGE_KEY = "produkPotensial";
+    let produkList = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+    let editId = null;
+    let filterAktif = "all";
+
+    // ===== LOGIKA PENILAIAN (inti tools) =====
+    function hitungSkorTotal(p) {
+      return (p.permintaan || 0) + (p.kompetisi || 0) + (p.margin || 0) + (p.tren || 0);
+    }
+    function tentukanLevel(total) {
+      if (total === 0) return { label: "⚪ Belum dinilai", kelas: "level-none", key: "none" };
+      if (total >= 15) return { label: "🟢 High Level", kelas: "level-high", key: "high" };
+      if (total >= 10) return { label: "🟡 Mid Level", kelas: "level-mid", key: "mid" };
+      return { label: "🔴 Low Level", kelas: "level-low", key: "low" };
+    }
+    function hitungProfit(p) {
+      return (p.hargaJual || 0) - (p.hargaModal || 0);
+    }
+    function hitungMargin(p) {
+      if (!p.hargaJual) return 0;
+      return Math.round(((p.hargaJual - p.hargaModal) / p.hargaJual) * 100);
+    }
+    function fokusPerbaikan(p) {
+      if (hitungSkorTotal(p) === 0) return { teks: "Belum dinilai", ok: false };
+      const saran = [];
+      if (p.permintaan > 0 && p.permintaan <= 2)
+        saran.push("Permintaan rendah: cari produk yang lebih dicari / perdalam riset pasar.");
+      if (p.kompetisi > 0 && p.kompetisi <= 2)
+        saran.push("Kompetisi ketat: cari diferensiasi / niche lebih sepi.");
+      if (p.margin > 0 && p.margin <= 2)
+        saran.push("Margin tipis: nego supplier / naikkan harga jual / ganti produk.");
+      if (p.tren > 0 && p.tren <= 2)
+        saran.push("Tren menurun: cari produk yang lagi naik / ikut tren terbaru.");
+      if (saran.length === 0) return { teks: "✅ Semua faktor sudah kuat, pertahankan!", ok: true };
+      return { teks: saran.join(" "), ok: false };
+    }
+    function formatRupiah(n) {
+      return "Rp " + (n || 0).toLocaleString("id-ID");
+    }
+
+    function simpan() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(produkList));
+    }
+
+    function ambilForm() {
+      const num = (id) => {
+        const v = parseInt(document.getElementById(id).value, 10);
+        return isNaN(v) ? 0 : v;
+      };
+      return {
+        id: editId || Date.now(),
+        nama: document.getElementById("nama").value.trim(),
+        kategori: document.getElementById("kategori").value,
+        permintaan: num("permintaan"),
+        kompetisi: num("kompetisi"),
+        margin: num("margin"),
+        tren: num("tren"),
+        hargaModal: num("hargaModal"),
+        hargaJual: num("hargaJual"),
+        supplier: document.getElementById("supplier").value.trim(),
+        catatan: document.getElementById("catatan").value.trim(),
+      };
+    }
+
+    document.getElementById("form-produk").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const data = ambilForm();
+      if (editId) {
+        produkList = produkList.map((p) => (p.id === editId ? data : p));
+      } else {
+        produkList.push(data);
+      }
+      simpan();
+      resetForm();
+      render();
+    });
+
+    function resetForm() {
+      document.getElementById("form-produk").reset();
+      editId = null;
+      document.getElementById("form-title").textContent = "➕ Tambah Produk";
+      document.getElementById("btn-simpan").textContent = "Simpan Produk";
+      document.getElementById("btn-batal").hidden = true;
+    }
+
+    document.getElementById("btn-batal").addEventListener("click", resetForm);
+
+    function editProduk(id) {
+      const p = produkList.find((x) => x.id === id);
+      if (!p) return;
+      editId = id;
+      document.getElementById("nama").value = p.nama;
+      document.getElementById("kategori").value = p.kategori;
+      document.getElementById("permintaan").value = p.permintaan || "";
+      document.getElementById("kompetisi").value = p.kompetisi || "";
+      document.getElementById("margin").value = p.margin || "";
+      document.getElementById("tren").value = p.tren || "";
+      document.getElementById("hargaModal").value = p.hargaModal || "";
+      document.getElementById("hargaJual").value = p.hargaJual || "";
+      document.getElementById("supplier").value = p.supplier || "";
+      document.getElementById("catatan").value = p.catatan || "";
+      document.getElementById("form-title").textContent = "✏️ Edit Produk";
+      document.getElementById("btn-simpan").textContent = "Update Produk";
+      document.getElementById("btn-batal").hidden = false;
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function hapusProduk(id) {
+      if (!confirm("Yakin mau hapus produk ini?")) return;
+      produkList = produkList.filter((p) => p.id !== id);
+      simpan();
+      render();
+    }
+
+    document.getElementById("filters").addEventListener("click", (e) => {
+      if (e.target.tagName !== "BUTTON") return;
+      filterAktif = e.target.dataset.filter;
+      document.querySelectorAll("#filters button").forEach((b) => b.classList.remove("active"));
+      e.target.classList.add("active");
+      render();
+    });
+
+    document.getElementById("btn-export").addEventListener("click", () => {
+      const blob = new Blob([JSON.stringify(produkList, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "riset-produk.json";
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    function render() {
+      const urut = [...produkList].sort((a, b) => hitungSkorTotal(b) - hitungSkorTotal(a));
+      const hitung = { high: 0, mid: 0, low: 0, none: 0 };
+      produkList.forEach((p) => hitung[tentukanLevel(hitungSkorTotal(p)).key]++);
+      document.getElementById("stats").innerHTML =
+        '<div class="stat-box"><div class="num">' + produkList.length + '</div><div class="lbl">Total Produk</div></div>' +
+        '<div class="stat-box"><div class="num">🟢 ' + hitung.high + '</div><div class="lbl">High Level</div></div>' +
+        '<div class="stat-box"><div class="num">🟡 ' + hitung.mid + '</div><div class="lbl">Mid Level</div></div>' +
+        '<div class="stat-box"><div class="num">🔴 ' + hitung.low + '</div><div class="lbl">Low Level</div></div>';
+
+      const tbody = document.getElementById("tbody");
+      tbody.innerHTML = "";
+      const tampil = urut.filter((p) => {
+        if (filterAktif === "all") return true;
+        return tentukanLevel(hitungSkorTotal(p)).key === filterAktif;
+      });
+      document.getElementById("kosong").hidden = tampil.length > 0;
+
+      tampil.forEach((p) => {
+        const total = hitungSkorTotal(p);
+        const level = tentukanLevel(total);
+        const fokus = fokusPerbaikan(p);
+        const tr = document.createElement("tr");
+        tr.innerHTML =
+          '<td><strong>' + p.nama + '</strong>' + (p.catatan ? '<br><small style="color:#888">' + p.catatan + '</small>' : "") + '</td>' +
+          '<td><span class="badge ' + level.kelas + '">' + level.label + '</span></td>' +
+          '<td><strong>' + total + '</strong>/20</td>' +
+          '<td>' + p.kategori + '</td>' +
+          '<td>' + formatRupiah(hitungProfit(p)) + '</td>' +
+          '<td>' + hitungMargin(p) + '%</td>' +
+          '<td class="tip ' + (fokus.ok ? "ok" : "") + '">' + fokus.teks + '</td>' +
+          '<td class="row-actions">' +
+            '<button onclick="editProduk(' + p.id + ')">Edit</button>' +
+            '<button class="del" onclick="hapusProduk(' + p.id + ')">Hapus</button>' +
+          '</td>';
+        tbody.appendChild(tr);
+      });
+    }
+
+    render();
+  </script>
+</body>
+</html>
