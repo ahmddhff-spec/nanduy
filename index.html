@@ -350,17 +350,27 @@
 
     // Cari baris header asli (marketplace spt Shopee sering naro judul di baris atas)
     function bacaBarisPintar(ws) {
-      const aoa = XLSX.utils.sheet_to_json(ws, { header: 1, blankrows: false });
+      const aoa = XLSX.utils.sheet_to_json(ws, { header: 1 });
       let headerIdx = 0;
-      for (let i = 0; i < Math.min(aoa.length, 20); i++) {
+      for (let i = 0; i < Math.min(aoa.length, 25); i++) {
         const sel = (aoa[i] || []).map((c) => String(c == null ? "" : c).trim().toLowerCase());
         const gabung = sel.join(" ");
-        const adaNama = sel.some((c) => c === "produk" || c === "nama" || c.includes("nama produk") || c.includes("product"));
-        const adaMetrik = gabung.includes("biaya") || gabung.includes("omset") || gabung.includes("penjualan") || gabung.includes("klik") || gabung.includes("dilihat") || gabung.includes("roas") || gabung.includes("pesanan") || gabung.includes("harga");
+        const adaNama = sel.some((c) => c === "produk" || c === "nama" || c.includes("nama produk") || c.includes("product") || c.includes("nama iklan") || c.includes("campaign") || c.includes("kampanye") || c.includes("ad name") || c.includes("ad group") || c.includes("grup iklan"));
+        const adaMetrik = gabung.includes("biaya") || gabung.includes("omset") || gabung.includes("omzet") || gabung.includes("penjualan") || gabung.includes("klik") || gabung.includes("dilihat") || gabung.includes("roas") || gabung.includes("efektifitas") || gabung.includes("pesanan") || gabung.includes("harga") || gabung.includes("cost") || gabung.includes("revenue") || gabung.includes("spend") || gabung.includes("impression") || gabung.includes("click") || gabung.includes("order") || gabung.includes("conversion") || gabung.includes("tayangan") || gabung.includes("pendapatan");
         const isiBanyak = sel.filter((c) => c !== "").length >= 3;
         if ((adaNama || adaMetrik) && isiBanyak) { headerIdx = i; break; }
       }
-      return XLSX.utils.sheet_to_json(ws, { range: headerIdx, defval: "" });
+      const headerRow = (aoa[headerIdx] || []).map((c) => String(c == null ? "" : c).trim());
+      const out = [];
+      for (let i = headerIdx + 1; i < aoa.length; i++) {
+        const row = aoa[i] || [];
+        const adaIsi = row.some((c) => c != null && String(c).trim() !== "");
+        if (!adaIsi) continue;
+        const obj = {};
+        headerRow.forEach((h, j) => { if (h !== "") obj[h] = row[j] != null ? row[j] : ""; });
+        out.push(obj);
+      }
+      return out;
     }
 
     document.getElementById("btn-import").addEventListener("click", () => { document.getElementById("file-import").click(); });
@@ -434,13 +444,13 @@
         const ws = wb.Sheets[wb.SheetNames[0]];
         const baris = bacaBarisPintar(ws);
         const masuk = baris.map((r) => {
-          const nama = String(ambilKolom(r, ["Nama Iklan", "Nama Produk", "Produk", "Nama", ["nama", "iklan"], ["nama"]]) || "Tanpa Nama");
-          const biaya = angkaInt(ambilKolom(r, ["Biaya", "Biaya Iklan", "Ad Spend", "Spend", "Pengeluaran", ["biaya"]]));
-          const omzet = angkaInt(ambilKolom(r, ["Omzet Penjualan", "Omset Iklan", "Penjualan dari Iklan", "GMV", "Ad Sales", ["omzet", "penjualan"], ["penjualan"], ["omzet"]]));
-          const klik = angkaInt(ambilKolom(r, ["Jumlah Klik", "Klik", "Clicks", ["klik"]]));
-          const dilihat = angkaInt(ambilKolom(r, ["Dilihat", "Tampilan", "Impression", "Impressions", ["dilihat"], ["tampilan"]]));
-          const terjual = angkaInt(ambilKolom(r, ["Produk Terjual", "Terjual", "Pesanan", ["terjual"]]));
-          const roasCol = angkaDesimal(ambilKolom(r, ["Efektifitas Iklan", "ROAS", "Roas", ["efektifitas"], ["roas"]]));
+          const nama = String(ambilKolom(r, ["Nama Iklan", "Nama Produk", "Produk", "Nama", "Nama Kampanye", "Campaign Name", "Campaign", "Nama Grup Iklan", "Ad Group Name", "Ad Name", ["nama", "iklan"], ["nama", "kampanye"], ["campaign"], ["ad", "group"], ["nama"]]) || "Tanpa Nama");
+          const biaya = angkaInt(ambilKolom(r, ["Biaya", "Biaya Iklan", "Ad Spend", "Spend", "Pengeluaran", "Cost", "Total Cost", "Total Biaya", "Biaya (Rp)", ["biaya"], ["cost"], ["spend"]]));
+          const omzet = angkaInt(ambilKolom(r, ["Omzet Penjualan", "Omset Iklan", "Penjualan dari Iklan", "GMV", "Ad Sales", "Gross Revenue", "Total Revenue", "Revenue", "Pendapatan", "Pendapatan Kotor", "Total Purchase Value", "Nilai Pembelian", ["omzet", "penjualan"], ["gross", "revenue"], ["purchase", "value"], ["revenue"], ["pendapatan"], ["penjualan"], ["omzet"]]));
+          const klik = angkaInt(ambilKolom(r, ["Jumlah Klik", "Klik", "Clicks", "Click", "Total Klik", ["klik"], ["click"]]));
+          const dilihat = angkaInt(ambilKolom(r, ["Dilihat", "Tampilan", "Impression", "Impressions", "Tayangan", "Impresi", "Jangkauan", ["dilihat"], ["tampilan"], ["impression"], ["tayangan"]]));
+          const terjual = angkaInt(ambilKolom(r, ["Produk Terjual", "Terjual", "Pesanan", "Orders", "Order", "Konversi", "Total Pembelian", "Jumlah Pesanan", ["terjual"], ["order"], ["konversi"], ["pembelian"]]));
+          const roasCol = angkaDesimal(ambilKolom(r, ["Efektifitas Iklan", "ROAS", "Roas", "ROI", "ROI Iklan", "Total purchase value ROAS", ["efektifitas"], ["roas"], ["roi"]]));
           const roas = roasCol > 0 ? roasCol : (biaya > 0 ? +((omzet / biaya).toFixed(2)) : 0);
           return { nama: nama, biaya: biaya, omzet: omzet, klik: klik, dilihat: dilihat, terjual: terjual, roas: roas };
         }).filter((c) => (c.biaya || 0) > 0 || (c.omzet || 0) > 0);
