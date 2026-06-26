@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Riset Produk Potensial</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <h1>🛒 Riset Produk Potensial</h1>
+    <p>Cek potensi produk: High / Mid / Low Level otomatis dari skor</p>
+  </header>
+
+  <!-- Ringkasan jumlah per level -->
+  <section class="stats" id="stats"></section>
+
+  <!-- Form tambah / edit produk -->
+  <section class="card">
+    <h2 id="form-title">➕ Tambah Produk</h2>
+    <form id="form-produk">
+      <div class="grid">
+        <label>Nama Produk
+          <input type="text" id="nama" required placeholder="contoh: Mini Portable Blender" />
+        </label>
+        <label>Kategori
+          <select id="kategori">
+            <option>Fashion</option>
+            <option>Elektronik</option>
+            <option>Gadget &amp; Aksesoris</option>
+            <option>Kecantikan</option>
+            <option>Kesehatan</option>
+            <option>Rumah Tangga</option>
+            <option>Makanan &amp; Minuman</option>
+            <option>Hobi &amp; Mainan</option>
+          </select>
+        </label>
+        <label>Skor Permintaan (1-5)
+          <input type="number" id="permintaan" min="1" max="5" />
+        </label>
+        <label>Skor Kompetisi (1-5)
+          <input type="number" id="kompetisi" min="1" max="5" />
+        </label>
+        <label>Skor Margin (1-5)
+          <input type="number" id="margin" min="1" max="5" />
+        </label>
+        <label>Skor Tren (1-5)
+          <input type="number" id="tren" min="1" max="5" />
+        </label>
+        <label>Harga Modal (Rp)
+          <input type="number" id="hargaModal" min="0" />
+        </label>
+        <label>Harga Jual (Rp)
+          <input type="number" id="hargaJual" min="0" />
+        </label>
+        <label>Supplier
+          <input type="text" id="supplier" />
+        </label>
+        <label>Catatan
+          <input type="text" id="catatan" />
+        </label>
+      </div>
+      <div class="actions">
+        <button type="submit" id="btn-simpan">Simpan Produk</button>
+        <button type="button" id="btn-batal" class="ghost" hidden>Batal</button>
+      </div>
+    </form>
+  </section>
+
+  <!-- Filter level -->
+  <section class="filters" id="filters">
+    <button data-filter="all" class="active">Semua</button>
+    <button data-filter="high">🟢 High</button>
+    <button data-filter="mid">🟡 Mid</button>
+    <button data-filter="low">🔴 Low</button>
+  </section>
+
+  <!-- Tabel produk -->
+  <section class="card">
+    <table id="tabel">
+      <thead>
+        <tr>
+          <th>Produk</th>
+          <th>Level</th>
+          <th>Skor</th>
+          <th>Kategori</th>
+          <th>Profit</th>
+          <th>Margin</th>
+          <th>Fokus Perbaikan</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    <p id="kosong" class="empty" hidden>Belum ada produk. Tambahkan dulu di atas 👆</p>
+  </section>
+
+  <footer>
+    <button id="btn-export" class="ghost">⬇️ Export JSON</button>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
