@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Riset Produk Potensial</title>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background: #f4f5f7; color: #1a1a1a; padding: 24px; max-width: 1200px; margin: 0 auto; }
@@ -54,6 +55,17 @@
   </header>
 
   <section class="stats" id="stats"></section>
+<section class="card" id="tracking-card">
+<h2>📅 Tren Antar-Minggu</h2>
+<p style="font-size:13px;color:#666;margin-bottom:12px">Rekam kondisi tiap minggu, lalu bandingin progresnya. Cocok buat ngukur "minggu ini lebih baik nggak?".</p>
+<div style="margin-bottom:12px;display:flex;gap:10px;flex-wrap:wrap"><button onclick="simpanSnapshot()">Simpan Snapshot Minggu Ini</button><button class="ghost" onclick="hapusSnapshotTerakhir()">Hapus Snapshot Terakhir</button></div>
+<div id="tracking"></div>
+</section>
+<section class="card" id="charts-card">
+<h2>📊 Grafik Visual</h2>
+<p style="font-size:13px;color:#666;margin-bottom:12px">Visual ringkas buat presentasi meeting.</p>
+<div id="charts"></div>
+</section>
 
   <section class="card" id="analisis-card">
     <h2>🤖 Analisis Otomatis</h2>
@@ -165,8 +177,11 @@
   <script>
     const STORAGE_KEY = "produkPotensial";
     const IKLAN_KEY = "iklanData";
+const SNAP_KEY = "snapshotMingguan";
     let produkList = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
     let iklanList = JSON.parse(localStorage.getItem(IKLAN_KEY) || "[]");
+let snapshots = JSON.parse(localStorage.getItem(SNAP_KEY) || "[]");
+let chartTren = null, chartKat = null, chartLevel = null, chartRoas = null;
     let editId = null;
     let filterAktif = "all";
     let sortBy = "skor";
@@ -544,6 +559,8 @@ stok: (function () { const v = ambilKolom(r, ["Stok", "Stock", "Sisa Stok", "Jum
       renderIklan();
       renderLaporan();
       renderStrategiAds();
+  renderTracking();
+  renderCharts();
     }
 
     function renderAnalisis() {
@@ -706,7 +723,95 @@ el.value = t;
       if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(ta.value).then(() => alert("Laporan kecopy! Tinggal paste di WhatsApp/Slack/Notion.")).catch(() => alert("Tekan Ctrl+C buat copy.")); } else { document.execCommand("copy"); alert("Laporan kecopy!"); }
     });
 
-    function renderStrategiAds() {
+    // ===== Tracking Antar-Minggu =====
+function simpanSnapshot() {
+  if (produkList.length === 0) { alert("Belum ada data produk buat di-snapshot."); return; }
+  const totalOmset = produkList.reduce((s, p) => s + (p.omset || 0), 0);
+  const totalPesanan = produkList.reduce((s, p) => s + (p.pesanan || 0), 0);
+  const produk = {};
+  produkList.forEach((p) => { produk[normNama(p.nama)] = { nama: p.nama, omset: p.omset || 0, pesanan: p.pesanan || 0 }; });
+  snapshots.push({ ts: Date.now(), tanggal: new Date().toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" }), totalOmset: totalOmset, totalPesanan: totalPesanan, sku: produkList.length, produk: produk });
+  localStorage.setItem(SNAP_KEY, JSON.stringify(snapshots));
+  render();
+  alert("Snapshot kesimpan! Total " + snapshots.length + " snapshot. Minggu depan import data baru, terus liat progresnya di sini.");
+}
+function hapusSnapshotTerakhir() {
+  if (snapshots.length === 0) { alert("Belum ada snapshot."); return; }
+  if (!confirm("Hapus snapshot terakhir (" + snapshots[snapshots.length - 1].tanggal + ")?")) return;
+  snapshots.pop();
+  localStorage.setItem(SNAP_KEY, JSON.stringify(snapshots));
+  render();
+}
+function deltaPersen(now, before) {
+  if (before === 0 || before == null) return { txt: now > 0 ? "baru" : "0%", arah: now > 0 ? "naik" : "rata" };
+  const d = ((now - before) / before) * 100;
+  return { txt: (d >= 0 ? "+" : "") + d.toFixed(0) + "%", arah: d > 1 ? "naik" : d < -1 ? "turun" : "rata" };
+}
+function warnaArah(a) { return a === "naik" ? "#1a7f37" : a === "turun" ? "#c1271e" : "#888"; }
+function ikonArah(a) { return a === "naik" ? "▲" : a === "turun" ? "▼" : "▬"; }
+function renderTracking() {
+  const el = document.getElementById("tracking");
+  if (!el) return;
+  const totalOmset = produkList.reduce((s, p) => s + (p.omset || 0), 0);
+  const totalPesanan = produkList.reduce((s, p) => s + (p.pesanan || 0), 0);
+  if (snapshots.length === 0) { el.innerHTML = '<p style="color:#999">Belum ada snapshot. Klik <strong>Simpan Snapshot Minggu Ini</strong> buat ngerekam kondisi sekarang. Minggu depan, abis import data baru, naik/turunnya langsung keliatan di sini.</p>'; return; }
+  const last = snapshots[snapshots.length - 1];
+  const dOmset = deltaPersen(totalOmset, last.totalOmset);
+  const dPesanan = deltaPersen(totalPesanan, last.totalPesanan);
+  const box = (lbl, now, dObj, prev, fmt) => '<div class="stat-box"><div class="lbl">' + lbl + ' vs minggu lalu</div><div class="num">' + fmt(now) + '</div><div class="sub" style="color:' + warnaArah(dObj.arah) + '">' + ikonArah(dObj.arah) + ' ' + dObj.txt + ' (dulu ' + fmt(prev) + ')</div></div>';
+  let html = '<p style="font-size:12px;color:#888;margin-bottom:10px">Data <strong>sekarang</strong> dibandingin snapshot terakhir (' + last.tanggal + '). ' + snapshots.length + ' snapshot tersimpan.</p>';
+  html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:16px">' + box("Omset", totalOmset, dOmset, last.totalOmset, formatRupiah) + box("Pesanan", totalPesanan, dPesanan, last.totalPesanan, (n) => n.toLocaleString("id-ID")) + '</div>';
+  const naik = [], turun = [];
+  produkList.forEach((p) => {
+    const prev = last.produk[normNama(p.nama)];
+    if (!prev) return;
+    const selisih = (p.omset || 0) - (prev.omset || 0);
+    if (selisih > 0) naik.push({ nama: p.nama, selisih: selisih });
+    else if (selisih < 0) turun.push({ nama: p.nama, selisih: selisih });
+  });
+  naik.sort((a, b) => b.selisih - a.selisih);
+  turun.sort((a, b) => a.selisih - b.selisih);
+  const listMom = (arr, warna, judul, sign) => {
+    if (arr.length === 0) return '<div style="flex:1;min-width:220px"><strong style="color:' + warna + '">' + judul + '</strong><p style="font-size:12px;color:#999;margin-top:4px">- belum ada perubahan -</p></div>';
+    const items = arr.slice(0, 5).map((x) => '<li>' + x.nama + ' <span style="color:' + warna + '">(' + sign + formatRupiah(Math.abs(x.selisih)) + ')</span></li>').join("");
+    return '<div style="flex:1;min-width:220px"><strong style="color:' + warna + '">' + judul + '</strong><ul style="margin:4px 0 0 18px;font-size:12px;line-height:1.7">' + items + '</ul></div>';
+  };
+  html += '<div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px">' + listMom(naik, "#1a7f37", "Momentum Naik", "+") + listMom(turun, "#c1271e", "Momentum Turun", "-") + '</div>';
+  html += '<canvas id="chart-tren" height="110"></canvas>';
+  el.innerHTML = html;
+  if (window.Chart) {
+    const labels = snapshots.map((s) => s.tanggal).concat(["Sekarang"]);
+    const dataOmset = snapshots.map((s) => s.totalOmset).concat([totalOmset]);
+    if (chartTren) chartTren.destroy();
+    chartTren = new Chart(document.getElementById("chart-tren"), { type: "line", data: { labels: labels, datasets: [{ label: "Total Omset", data: dataOmset, borderColor: "#2383e2", backgroundColor: "rgba(35,131,226,0.12)", fill: true, tension: 0.3 }] }, options: { plugins: { legend: { display: false } }, scales: { y: { ticks: { callback: (v) => formatRupiah(v) } } } } });
+  }
+}
+function renderCharts() {
+  const el = document.getElementById("charts");
+  if (!el) return;
+  if (produkList.length === 0) { el.innerHTML = '<p style="color:#999">Belum ada data buat divisualisasiin.</p>'; return; }
+  if (!window.Chart) { el.innerHTML = '<p style="color:#c1271e;font-size:12px">Library grafik gagal dimuat (cek koneksi internet, lalu refresh).</p>'; return; }
+  el.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px"><div><h3 style="font-size:13px;margin-bottom:6px">Omset per Kategori</h3><canvas id="chart-kat" height="200"></canvas></div><div><h3 style="font-size:13px;margin-bottom:6px">Distribusi Level</h3><canvas id="chart-level" height="200"></canvas></div>' + (iklanList && iklanList.length ? '<div><h3 style="font-size:13px;margin-bottom:6px">ROAS per Campaign (Top 8)</h3><canvas id="chart-roas" height="200"></canvas></div>' : '') + '</div>';
+  const katOmset = {};
+  produkList.forEach((p) => { katOmset[p.kategori] = (katOmset[p.kategori] || 0) + (p.omset || 0); });
+  const katLabels = Object.keys(katOmset);
+  if (chartKat) chartKat.destroy();
+  chartKat = new Chart(document.getElementById("chart-kat"), { type: "bar", data: { labels: katLabels, datasets: [{ label: "Omset", data: katLabels.map((k) => katOmset[k]), backgroundColor: "#2383e2" }] }, options: { indexAxis: "y", plugins: { legend: { display: false } }, scales: { x: { ticks: { callback: (v) => formatRupiah(v) } } } } });
+  const lvlOf = (p) => tentukanLevel(hitungSkorTotal(p)).key;
+  const cH = produkList.filter((p) => lvlOf(p) === "high").length;
+  const cM = produkList.filter((p) => lvlOf(p) === "mid").length;
+  const cL = produkList.filter((p) => lvlOf(p) === "low").length;
+  const cN = produkList.filter((p) => lvlOf(p) === "none").length;
+  if (chartLevel) chartLevel.destroy();
+  chartLevel = new Chart(document.getElementById("chart-level"), { type: "doughnut", data: { labels: ["High", "Mid", "Low", "Belum dinilai"], datasets: [{ data: [cH, cM, cL, cN], backgroundColor: ["#1a7f37", "#e0a800", "#c1271e", "#bbb"] }] }, options: { plugins: { legend: { position: "bottom" } } } });
+  if (iklanList && iklanList.length) {
+    const roasOf = (c) => (c.roas && c.roas > 0) ? c.roas : ((c.biaya || 0) > 0 ? (c.omzet || 0) / c.biaya : 0);
+    const topC = iklanList.slice().sort((a, b) => roasOf(b) - roasOf(a)).slice(0, 8);
+    if (chartRoas) chartRoas.destroy();
+    chartRoas = new Chart(document.getElementById("chart-roas"), { type: "bar", data: { labels: topC.map((c) => c.nama.length > 18 ? c.nama.slice(0, 18) + "..." : c.nama), datasets: [{ label: "ROAS", data: topC.map((c) => +roasOf(c).toFixed(2)), backgroundColor: topC.map((c) => roasOf(c) >= 4 ? "#1a7f37" : roasOf(c) >= 2 ? "#e0a800" : "#c1271e") }] }, options: { indexAxis: "y", plugins: { legend: { display: false } } } });
+  }
+}
+function renderStrategiAds() {
       const el = document.getElementById('ads');
       if (produkList.length === 0) { el.innerHTML = '<p style="color:#999">Belum ada data. Import dulu, strategi muncul otomatis.</p>'; return; }
       hitungStatMetrik();
