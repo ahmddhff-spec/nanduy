@@ -66,6 +66,19 @@
     <div id="gems"></div>
   </section>
 
+  <section class="card" id="laporan-card">
+    <h2>📋 Laporan Mingguan (buat Meeting)</h2>
+    <p style="font-size:13px;color:#666;margin-bottom:12px">Ringkasan sales siap-tempel ke WhatsApp / Slack / Notion.</p>
+    <div style="margin-bottom:10px"><button id="btn-copy-laporan" class="ghost">📋 Copy Laporan</button></div>
+    <textarea id="laporan" readonly style="width:100%;min-height:280px;font-family:monospace;font-size:12px;padding:12px;border:1px solid #ddd;border-radius:8px;background:#fafafa;white-space:pre"></textarea>
+  </section>
+
+  <section class="card" id="ads-card">
+    <h2>📣 Strategi Ads & Marketing</h2>
+    <p style="font-size:13px;color:#666;margin-bottom:12px">Rekomendasi strategi iklan otomatis, dikelompokin per tujuan. Tinggal eksekusi.</p>
+    <div id="ads"></div>
+  </section>
+
   <section class="card">
     <h2 id="form-title">➕ Tambah Produk</h2>
     <form id="form-produk">
@@ -401,6 +414,8 @@
 
       renderAnalisis();
       renderHiddenGems();
+      renderLaporan();
+      renderStrategiAds();
     }
 
     function renderAnalisis() {
@@ -467,6 +482,99 @@
           '<div style="font-size:12px;color:#6b21a8;margin-top:3px">' + alasan + '</div>' +
         '</div>';
       }).join("");
+    }
+
+    function renderLaporan() {
+      const el = document.getElementById("laporan");
+      const tgl = new Date().toLocaleDateString("id-ID", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+      const totalOmset = produkList.reduce((s, p) => s + (p.omset || 0), 0);
+      const totalPesanan = produkList.reduce((s, p) => s + (p.pesanan || 0), 0);
+      const lvlOf = (p) => tentukanLevel(hitungSkorTotal(p)).key;
+      const cH = produkList.filter((p) => lvlOf(p) === "high").length;
+      const cM = produkList.filter((p) => lvlOf(p) === "mid").length;
+      const cL = produkList.filter((p) => lvlOf(p) === "low").length;
+      const sortOmset = produkList.slice().sort((a, b) => (b.omset || 0) - (a.omset || 0));
+      const top5 = sortOmset.slice(0, 5);
+      const perhatian = produkList.filter((p) => (p.pesanan || 0) === 0 && (p.omset || 0) === 0);
+      const katOmset = {};
+      produkList.forEach((p) => { katOmset[p.kategori] = (katOmset[p.kategori] || 0) + (p.omset || 0); });
+      let katTop = "-", katMax = -1;
+      Object.keys(katOmset).forEach((k) => { if (katOmset[k] > katMax) { katMax = katOmset[k]; katTop = k; } });
+
+      let t = "";
+      t += "LAPORAN SALES MINGGUAN\n";
+      t += tgl + "\n";
+      t += "========================================\n\n";
+      t += "RINGKASAN\n";
+      t += "- Total Omset    : " + formatRupiah(totalOmset) + "\n";
+      t += "- Total Pesanan  : " + totalPesanan.toLocaleString("id-ID") + "\n";
+      t += "- Jumlah SKU     : " + produkList.length + "\n";
+      t += "- Kategori Juara : " + katTop + " (" + formatRupiah(katMax) + ")\n";
+      t += "- Level Produk   : " + cH + " High / " + cM + " Mid / " + cL + " Low\n\n";
+      t += "TOP 5 PRODUK (OMSET)\n";
+      top5.forEach((p, i) => { t += (i + 1) + ". " + p.nama + " - " + formatRupiah(p.omset || 0) + " (" + (p.pesanan || 0).toLocaleString("id-ID") + " pesanan)\n"; });
+      t += "\n";
+      hitungStatMetrik();
+      const adaKualitas = produkList.some((p) => (p.cvr || 0) > 0 || (p.repeat || 0) > 0);
+      const gems = produkList.map((p) => {
+        const pOmset = persentil(p.omset || 0, statMetrik.omset);
+        let qNorm;
+        if (adaKualitas) { qNorm = Math.max(persentil(p.cvr || 0, statMetrik.cvr), persentil(p.repeat || 0, statMetrik.repeat)); }
+        else { qNorm = persentil(p.pesanan || 0, statMetrik.pesanan); }
+        return { p: p, skor: qNorm * (1 - pOmset), qNorm: qNorm, pOmset: pOmset };
+      }).filter((g) => g.qNorm >= 0.5 && g.pOmset <= 0.6 && g.skor > 0).sort((a, b) => b.skor - a.skor).slice(0, 3);
+      t += "HIDDEN GEMS (POTENSI DIDORONG)\n";
+      if (gems.length === 0) { t += "- Belum ada terdeteksi\n"; } else { gems.forEach((g, i) => { t += (i + 1) + ". " + g.p.nama + " - omset " + formatRupiah(g.p.omset || 0) + "\n"; }); }
+      t += "\n";
+      t += "PERLU PERHATIAN\n";
+      t += "- " + perhatian.length + " produk belum ada penjualan (evaluasi listing/iklan atau drop)\n\n";
+      t += "REKOMENDASI MINGGU INI\n";
+      t += "1. Pertahankan & scale stok produk Top 5.\n";
+      t += "2. Dorong iklan ke Hidden Gems biar omset naik.\n";
+      t += "3. Review/optimasi atau drop produk yang belum ada penjualan.\n";
+      if (cL > 0) t += "4. Evaluasi " + cL + " produk Low Level - perbaiki atau ganti.\n";
+      el.value = t;
+    }
+    document.getElementById("btn-copy-laporan").addEventListener("click", () => {
+      const ta = document.getElementById("laporan");
+      ta.select();
+      if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(ta.value).then(() => alert("Laporan kecopy! Tinggal paste di WhatsApp/Slack/Notion.")).catch(() => alert("Tekan Ctrl+C buat copy.")); } else { document.execCommand("copy"); alert("Laporan kecopy!"); }
+    });
+
+    function renderStrategiAds() {
+      const el = document.getElementById('ads');
+      if (produkList.length === 0) { el.innerHTML = '<p style="color:#999">Belum ada data. Import dulu, strategi muncul otomatis.</p>'; return; }
+      hitungStatMetrik();
+      const adaKualitas = produkList.some((p) => (p.cvr || 0) > 0 || (p.repeat || 0) > 0);
+      const bucketOf = (p) => {
+        const pOmset = persentil(p.omset || 0, statMetrik.omset);
+        const adaJual = (p.omset || 0) > 0 || (p.pesanan || 0) > 0;
+        if (!adaJual) return 'test';
+        if (pOmset >= 0.7 || tentukanLevel(hitungSkorTotal(p)).key === 'high') return 'scale';
+        const qNorm = adaKualitas ? Math.max(persentil(p.cvr || 0, statMetrik.cvr), persentil(p.repeat || 0, statMetrik.repeat)) : persentil(p.pesanan || 0, statMetrik.pesanan);
+        if (qNorm >= 0.5 && pOmset <= 0.6) return 'boost';
+        return 'optimize';
+      };
+      const grup = { scale: [], boost: [], optimize: [], test: [] };
+      produkList.forEach((p) => { grup[bucketOf(p)].push(p); });
+      const contoh = (arr) => arr.slice().sort((a, b) => (b.omset || 0) - (a.omset || 0)).slice(0, 5).map((p) => p.nama).join(', ') || '-';
+      const def = [
+        { key: 'scale', judul: '🚀 SCALE — Produk Juara', warna: '#1a7f37', bg: '#eafaf0', budget: '40-50%', isi: ['<strong>Iklan:</strong> Shopee/Tokopedia Ads (target ROAS) + retargeting Meta/TikTok ke pengunjung & add-to-cart.', '<strong>Taktik:</strong> naikin bid bertahap selama ROAS aman, aktifkan iklan toko, bundling/upsell, jaga stok jangan habis.', '<strong>Goal:</strong> maksimalin volume selagi lagi perform.'] },
+        { key: 'boost', judul: '💎 BOOST — Hidden Gems', warna: '#6b21a8', bg: '#faf5ff', budget: '25-30%', isi: ['<strong>Iklan:</strong> Iklan Pencarian (keyword relevan) + broad/auto buat cari audiens baru, TikTok konten organik + Spark Ads.', '<strong>Taktik:</strong> naikin budget bertahap (+20%/minggu) selama konversi stabil, perbanyak konten & review, kasih promo pembuka.', '<strong>Goal:</strong> angkat exposure biar omset nyusul kualitasnya.'] },
+        { key: 'optimize', judul: '🛠️ OPTIMIZE — Perlu Dibenahi', warna: '#9a6700', bg: '#fffbeb', budget: '15%', isi: ['<strong>Benahi dulu:</strong> foto utama, judul + keyword, harga kompetitif, deskripsi, kumpulin min. 5 review.', '<strong>Iklan:</strong> kecil aja buat tes SETELAH listing diperbaiki — jangan gas budget di listing jelek.', '<strong>Goal:</strong> naikin CVR dulu sebelum scale.'] },
+        { key: 'test', judul: '🧪 TEST / DROP — Belum Jalan', warna: '#c1271e', bg: '#fff5f5', budget: '5-10%', isi: ['<strong>Iklan:</strong> budget mini harian buat validasi minat pasar.', '<strong>Taktik:</strong> kalau 2-4 minggu tetap sepi → drop/ganti produk, alihin budget ke Scale/Boost.', '<strong>Goal:</strong> stop buang uang di produk mati.'] },
+      ];
+      let html = '<div style="background:#f0f4ff;border-radius:8px;padding:12px;margin-bottom:16px;font-size:13px"><strong>💰 Saran Alokasi Budget Iklan Mingguan:</strong> 🚀 Scale 45% · 💎 Boost 28% · 🛠️ Optimize 15% · 🧪 Test 12% <span style="color:#888">(sesuaikan sama budget total kamu)</span></div>';
+      def.forEach((d) => {
+        const arr = grup[d.key];
+        html += '<div style="border-left:4px solid ' + d.warna + ';background:' + d.bg + ';padding:12px 14px;margin-bottom:12px;border-radius:0 8px 8px 0">' +
+          '<div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px"><strong style="color:' + d.warna + '">' + d.judul + '</strong><span style="font-size:12px;color:#555">' + arr.length + ' produk · budget ' + d.budget + '</span></div>' +
+          '<ul style="margin:8px 0 0 18px;font-size:12px;line-height:1.7">' + d.isi.map((x) => '<li>' + x + '</li>').join('') + '</ul>' +
+          '<div style="font-size:11px;color:#777;margin-top:6px"><strong>Contoh produk:</strong> ' + contoh(arr) + '</div>' +
+        '</div>';
+      });
+      html += '<div style="font-size:12px;color:#666;margin-top:8px"><strong>📌 Tips channel:</strong> Shopee/Tokopedia Ads buat nangkep demand yang udah nyari; TikTok Ads/affiliate buat bikin demand baru & produk visual; Meta (IG/FB) buat retargeting & audiens mirip (lookalike).</div>';
+      el.innerHTML = html;
     }
 
     render();
