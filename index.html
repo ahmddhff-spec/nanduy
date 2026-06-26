@@ -153,8 +153,8 @@
   </section>
 
   <footer>
-    <input type="file" id="file-import" accept=".xlsx,.xls" hidden />
-    <input type="file" id="file-import-ads" accept=".xlsx,.xls" hidden />
+    <input type="file" id="file-import" accept=".xlsx,.xls,.csv" hidden />
+    <input type="file" id="file-import-ads" accept=".xlsx,.xls,.csv" hidden />
     <button id="btn-import" class="ghost">⬆️ Import Produk</button>
     <button id="btn-import-ads" class="ghost">📣 Import Data Iklan</button>
     <button id="btn-export" class="ghost">⬇️ Export Excel</button>
@@ -355,9 +355,10 @@
     document.getElementById("file-import").addEventListener("change", (e) => {
       const file = e.target.files[0];
       if (!file) return;
+      const isCsv = (file.name.split(".").pop() || "").toLowerCase() === "csv";
       const reader = new FileReader();
       reader.onload = (ev) => {
-        const wb = XLSX.read(ev.target.result, { type: "array" });
+        const wb = XLSX.read(ev.target.result, { type: isCsv ? "string" : "array" });
         const ws = wb.Sheets[wb.SheetNames[0]];
         const baris = XLSX.utils.sheet_to_json(ws);
         baris.forEach((r) => {
@@ -377,10 +378,10 @@
           });
         });
         simpan(); render();
-        alert("Berhasil import " + baris.length + " produk dari Excel!");
+        alert("Berhasil import " + baris.length + " produk dari file!");
         e.target.value = "";
       };
-      reader.readAsArrayBuffer(file);
+      if (isCsv) reader.readAsText(file); else reader.readAsArrayBuffer(file);
     });
 
     // ===== Import Data Iklan (cocokin by nama produk) =====
@@ -392,9 +393,10 @@
     document.getElementById("file-import-ads").addEventListener("change", (e) => {
       const file = e.target.files[0];
       if (!file) return;
+      const isCsv = (file.name.split(".").pop() || "").toLowerCase() === "csv";
       const reader = new FileReader();
       reader.onload = (ev) => {
-        const wb = XLSX.read(ev.target.result, { type: "array" });
+        const wb = XLSX.read(ev.target.result, { type: isCsv ? "string" : "array" });
         const ws = wb.Sheets[wb.SheetNames[0]];
         const baris = XLSX.utils.sheet_to_json(ws);
         const peta = {};
@@ -420,7 +422,7 @@
         alert(msg);
         e.target.value = "";
       };
-      reader.readAsArrayBuffer(file);
+      if (isCsv) reader.readAsText(file); else reader.readAsArrayBuffer(file);
     });
 
     // ===== Render =====
