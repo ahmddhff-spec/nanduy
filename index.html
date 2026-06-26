@@ -55,6 +55,11 @@
 
   <section class="stats" id="stats"></section>
 
+  <section class="card" id="analisis-card">
+    <h2>🤖 Analisis Otomatis</h2>
+    <div id="analisis"></div>
+  </section>
+
   <section class="card">
     <h2 id="form-title">➕ Tambah Produk</h2>
     <form id="form-produk">
@@ -133,7 +138,26 @@
     let cari = "";
 
     // ===== LOGIKA PENILAIAN =====
-    function hitungSkorTotal(p) { return (p.permintaan || 0) + (p.kompetisi || 0) + (p.tren || 0); }
+    let statMetrik = null;
+    function hitungStatMetrik() {
+      const sortNum = (key) => produkList.map((p) => p[key] || 0).sort((a, b) => a - b);
+      statMetrik = { omset: sortNum("omset"), pesanan: sortNum("pesanan"), cvr: sortNum("cvr"), repeat: sortNum("repeat") };
+    }
+    function persentil(v, arr) {
+      const n = arr.length;
+      if (n <= 1) return v > 0 ? 1 : 0;
+      let count = 0;
+      for (let i = 0; i < n; i++) { if (arr[i] < v) count++; }
+      return count / (n - 1);
+    }
+    function punyaSkorManual(p) { return (p.permintaan || 0) > 0 || (p.kompetisi || 0) > 0 || (p.tren || 0) > 0; }
+    function skorAuto(p) {
+      if (!statMetrik) hitungStatMetrik();
+      const s = 0.4 * persentil(p.omset || 0, statMetrik.omset) + 0.3 * persentil(p.pesanan || 0, statMetrik.pesanan) + 0.15 * persentil(p.cvr || 0, statMetrik.cvr) + 0.15 * persentil(p.repeat || 0, statMetrik.repeat);
+      return Math.round(s * 15);
+    }
+    function hitungSkorManual(p) { return (p.permintaan || 0) + (p.kompetisi || 0) + (p.tren || 0); }
+    function hitungSkorTotal(p) { return punyaSkorManual(p) ? hitungSkorManual(p) : skorAuto(p); }
     function tentukanLevel(total) {
       if (total === 0) return { label: "⚪ Belum dinilai", kelas: "level-none", key: "none" };
       if (total >= 12) return { label: "🟢 High Level", kelas: "level-high", key: "high" };
@@ -146,6 +170,7 @@
       if (p.permintaan > 0 && p.permintaan <= 2) saran.push("Permintaan rendah: cari produk yang lebih dicari.");
       if (p.kompetisi > 0 && p.kompetisi <= 2) saran.push("Kompetisi ketat: cari diferensiasi / niche lebih sepi.");
       if (p.tren > 0 && p.tren <= 2) saran.push("Tren menurun: cari produk yang lagi naik.");
+      if ((p.pesanan || 0) === 0 && (p.omset || 0) === 0) saran.push("Belum ada penjualan: evaluasi listing/iklan atau pertimbangkan drop.");
       if (p.cvr > 0 && p.cvr < 2) saran.push("CVR rendah: perbaiki foto, judul, harga, & deskripsi listing.");
       if (p.repeat > 0 && p.repeat < 10) saran.push("Repeat rate rendah: tingkatkan kualitas & after-sales.");
       if (saran.length === 0) return { teks: "✅ Semua faktor sudah kuat, pertahankan!", ok: true };
@@ -306,6 +331,7 @@
 
     // ===== Render =====
     function render() {
+      hitungStatMetrik();
       const totalOmset = produkList.reduce((s, p) => s + (p.omset || 0), 0);
       const totalPesanan = produkList.reduce((s, p) => s + (p.pesanan || 0), 0);
       const dinilai = produkList.filter((p) => hitungSkorTotal(p) > 0);
@@ -342,7 +368,7 @@
           '<td>' + (i + 1) + '</td>' +
           '<td><strong>' + p.nama + '</strong>' + (p.catatan ? '<br><small style="color:#888">' + p.catatan + '</small>' : "") + '</td>' +
           '<td><span class="badge ' + level.kelas + '">' + level.label + '</span></td>' +
-          '<td><strong>' + total + '</strong>/15</td>' +
+          '<td><strong>' + total + '</strong>/15' + (punyaSkorManual(p) ? '' : ' <small style="color:#aaa">auto</small>') + '</td>' +
           '<td>' + p.kategori + '</td>' +
           '<td>' + formatRupiah(p.omset) + '</td>' +
           '<td>' + (p.pesanan || 0).toLocaleString("id-ID") + '</td>' +
@@ -355,6 +381,41 @@
           '</td>';
         tbody.appendChild(tr);
       });
+
+      renderAnalisis();
+    }
+
+    function renderAnalisis() {
+      const el = document.getElementById("analisis");
+      if (produkList.length === 0) { el.innerHTML = '<p style="color:#999">Belum ada data. Import Excel atau tambah produk dulu, analisis muncul otomatis di sini.</p>'; return; }
+      const sortOmset = produkList.slice().sort((a, b) => (b.omset || 0) - (a.omset || 0));
+      const juara = sortOmset[0];
+      const lvlOf = (p) => tentukanLevel(hitungSkorTotal(p)).key;
+      const cH = produkList.filter((p) => lvlOf(p) === "high").length;
+      const cM = produkList.filter((p) => lvlOf(p) === "mid").length;
+      const cL = produkList.filter((p) => lvlOf(p) === "low").length;
+      const katOmset = {};
+      produkList.forEach((p) => { katOmset[p.kategori] = (katOmset[p.kategori] || 0) + (p.omset || 0); });
+      let katTop = "-", katMax = -1;
+      Object.keys(katOmset).forEach((k) => { if (katOmset[k] > katMax) { katMax = katOmset[k]; katTop = k; } });
+      const perhatian = produkList.filter((p) => (p.pesanan || 0) === 0 && (p.omset || 0) === 0);
+      const cvrRendah = produkList.filter((p) => p.cvr > 0 && p.cvr < 2);
+      const totalOmset = produkList.reduce((s, p) => s + (p.omset || 0), 0);
+
+      const insight = [];
+      insight.push("🏆 <strong>Produk juara:</strong> " + juara.nama + " — omset tertinggi " + formatRupiah(juara.omset || 0) + ". Pertahankan stok & dorong iklan.");
+      insight.push("📊 <strong>Distribusi level:</strong> " + cH + " High, " + cM + " Mid, " + cL + " Low dari " + produkList.length + " produk.");
+      insight.push("🥇 <strong>Kategori paling cuan:</strong> " + katTop + " (omset " + formatRupiah(katMax) + "). Pertimbangkan tambah varian di sini.");
+      if (perhatian.length > 0) insight.push("⚠️ <strong>" + perhatian.length + " produk belum ada penjualan</strong> — evaluasi listing/iklan atau pertimbangkan di-drop.");
+      if (cvrRendah.length > 0) insight.push("👀 <strong>" + cvrRendah.length + " produk CVR di bawah 2%</strong> — perbaiki foto utama, judul, & harga biar lebih banyak checkout.");
+      const top3 = sortOmset.slice(0, 3).map((p, i) => (i + 1) + ". " + p.nama + " (" + formatRupiah(p.omset || 0) + ")").join("<br>");
+
+      el.innerHTML =
+        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px">' +
+          '<div><h3 style="font-size:14px;margin-bottom:8px">💡 Insight & Rekomendasi</h3><ul style="padding-left:18px;line-height:1.8;font-size:13px">' + insight.map((t) => "<li>" + t + "</li>").join("") + '</ul></div>' +
+          '<div><h3 style="font-size:14px;margin-bottom:8px">🏆 Top 3 Produk (Omset)</h3><p style="font-size:13px;line-height:1.9">' + top3 + '</p>' +
+          '<h3 style="font-size:14px;margin:12px 0 8px">📈 Ringkasan</h3><p style="font-size:13px;line-height:1.8">Total ' + produkList.length + ' produk · Omset ' + formatRupiah(totalOmset) + '</p></div>' +
+        '</div>';
     }
 
     render();
