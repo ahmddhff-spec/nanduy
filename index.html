@@ -346,6 +346,21 @@
     function angkaInt(v) { if (typeof v === "number") return Math.round(v); if (!v) return 0; const n = parseInt(String(v).replace(/[^0-9-]/g, ""), 10); return isNaN(n) ? 0 : n; }
     function angkaDesimal(v) { if (typeof v === "number") return v; if (!v) return 0; const n = parseFloat(String(v).replace(/%/g, "").trim().replace(/,/g, ".").replace(/[^0-9.-]/g, "")); return isNaN(n) ? 0 : n; }
 
+    // Cari baris header asli (marketplace spt Shopee sering naro judul di baris atas)
+    function bacaBarisPintar(ws) {
+      const aoa = XLSX.utils.sheet_to_json(ws, { header: 1, blankrows: false });
+      let headerIdx = 0;
+      for (let i = 0; i < Math.min(aoa.length, 20); i++) {
+        const sel = (aoa[i] || []).map((c) => String(c == null ? "" : c).trim().toLowerCase());
+        const gabung = sel.join(" ");
+        const adaNama = sel.some((c) => c === "produk" || c === "nama" || c.includes("nama produk") || c.includes("product"));
+        const adaMetrik = gabung.includes("biaya") || gabung.includes("omset") || gabung.includes("penjualan") || gabung.includes("klik") || gabung.includes("dilihat") || gabung.includes("roas") || gabung.includes("pesanan") || gabung.includes("harga");
+        const isiBanyak = sel.filter((c) => c !== "").length >= 3;
+        if ((adaNama || adaMetrik) && isiBanyak) { headerIdx = i; break; }
+      }
+      return XLSX.utils.sheet_to_json(ws, { range: headerIdx, defval: "" });
+    }
+
     document.getElementById("btn-import").addEventListener("click", () => { document.getElementById("file-import").click(); });
     document.getElementById("btn-reset").addEventListener("click", () => {
       if (!confirm("Yakin hapus SEMUA data produk? Tindakan ini tidak bisa dibatalkan.")) return;
@@ -368,7 +383,7 @@
           wb = XLSX.read(ev.target.result, { type: "array" });
         }
         const ws = wb.Sheets[wb.SheetNames[0]];
-        const baris = XLSX.utils.sheet_to_json(ws);
+        const baris = bacaBarisPintar(ws);
         baris.forEach((r) => {
           produkList.push({
             id: Date.now() + Math.floor(Math.random() * 100000),
@@ -414,7 +429,7 @@
           wb = XLSX.read(ev.target.result, { type: "array" });
         }
         const ws = wb.Sheets[wb.SheetNames[0]];
-        const baris = XLSX.utils.sheet_to_json(ws);
+        const baris = bacaBarisPintar(ws);
         const peta = {};
         produkList.forEach((p) => { peta[normNama(p.nama)] = p; });
         let cocok = 0, takCocok = 0; const gagal = [];
