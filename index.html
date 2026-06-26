@@ -212,6 +212,8 @@
       return { teks: saran.join(" "), ok: false };
     }
     function stokAda(p) { return p.stok == null || (p.stok || 0) > 0; }
+function adaDataStok() { return produkList.some((p) => p.stok != null); }
+function stokSiap(p) { return adaDataStok() ? (p.stok || 0) > 0 : stokAda(p); }
 function formatRupiah(n) {
       n = n || 0;
       if (n >= 1e9) return "Rp " + (n / 1e9).toFixed(1).replace(".0", "") + "M";
@@ -593,7 +595,7 @@ stok: (function () { const v = ambilKolom(r, ["Stok", "Stock", "Sisa Stok", "Jum
           qNorm = persentil(p.pesanan || 0, statMetrik.pesanan); sinyal = "pesanan";
         }
         return { p: p, skor: qNorm * (1 - pOmset), qNorm: qNorm, pOmset: pOmset, sinyal: sinyal };
-      }).filter((g) => stokAda(g.p) && g.qNorm >= 0.7 && g.pOmset <= 0.4 && g.skor > 0);
+      }).filter((g) => stokSiap(g.p) && g.qNorm >= 0.7 && g.pOmset <= 0.4 && g.skor > 0);
       gems.sort((a, b) => b.skor - a.skor);
       const top = gems.slice(0, 6);
       if (top.length === 0) { el.innerHTML = '<p style="color:#999">Belum ada hidden gem yang <strong>benar-benar potensial</strong> saat ini (kriteria ketat: sinyal sangat kuat + omset masih kecil + stok tersedia). Lengkapi data CVR/Repeat & kolom Stok biar deteksinya makin akurat.</p>'; return; }
@@ -604,7 +606,7 @@ stok: (function () { const v = ambilKolom(r, ["Stok", "Stock", "Sisa Stok", "Jum
         else if (g.sinyal === "repeat") alasan = "Repeat rate tinggi (" + (p.repeat || 0) + "%) tapi omset kecil — pembeli loyal, layak di-scale.";
         else alasan = "Permintaan lumayan (" + (p.pesanan || 0).toLocaleString("id-ID") + " pesanan) tapi omset masih kecil — dorong exposure / pertimbangkan naikin harga.";
         return '<div style="border-left:3px solid #8b5cf6;padding:8px 12px;margin-bottom:10px;background:#faf8ff;border-radius:0 8px 8px 0">' +
-          '<strong>💎 ' + p.nama + '</strong> <span style="color:#888;font-size:12px">· ' + p.kategori + ' · Omset ' + formatRupiah(p.omset || 0) + (p.stok != null ? ' · Stok ' + p.stok : '') + '</span>' +
+          '<strong>' + p.nama + '</strong> <span style="color:#888;font-size:12px">· ' + p.kategori + ' · Omset ' + formatRupiah(p.omset || 0) + (p.stok != null ? ' · Stok ' + p.stok : '') + '</span>' +
           '<div style="font-size:12px;color:#6b21a8;margin-top:3px">' + alasan + '</div>' +
         '</div>';
       }).join("");
@@ -653,16 +655,16 @@ stok: (function () { const v = ambilKolom(r, ["Stok", "Stock", "Sisa Stok", "Jum
       Object.keys(katOmset).forEach((k) => { if (katOmset[k] > katMax) { katMax = katOmset[k]; katTop = k; } });
 
       let t = "";
-      t += "LAPORAN SALES MINGGUAN\n";
+      t += "*LAPORAN SALES MINGGUAN*\n";
       t += tgl + "\n";
-      t += "========================================\n\n";
-      t += "RINGKASAN\n";
-      t += "- Total Omset    : " + formatRupiah(totalOmset) + "\n";
-      t += "- Total Pesanan  : " + totalPesanan.toLocaleString("id-ID") + "\n";
-      t += "- Jumlah SKU     : " + produkList.length + "\n";
-      t += "- Kategori Juara : " + katTop + " (" + formatRupiah(katMax) + ")\n";
-      t += "- Level Produk   : " + cH + " High / " + cM + " Mid / " + cL + " Low\n\n";
-      t += "TOP 5 PRODUK (OMSET)\n";
+      t += "\nHalo tim. Minggu ini toko ngumpulin omset " + formatRupiah(totalOmset) + " dari " + totalPesanan.toLocaleString("id-ID") + " pesanan" + (cH > 0 ? ", dan ada " + cH + " produk High Level yang lagi perform" : "") + ". Ini rinciannya:\n\n";
+      t += "*RINGKASAN CEPAT*\n";
+      t += "- Omset: " + formatRupiah(totalOmset) + "\n";
+      t += "- Pesanan: " + totalPesanan.toLocaleString("id-ID") + "\n";
+      t += "- Produk aktif: " + produkList.length + " SKU\n";
+      t += "- Kategori juara: " + katTop + " (" + formatRupiah(katMax) + ")\n";
+      t += "- Level produk: " + cH + " High / " + cM + " Mid / " + cL + " Low\n\n";
+      t += "*BINTANG MINGGU INI*\n";
       top5.forEach((p, i) => { t += (i + 1) + ". " + p.nama + " - " + formatRupiah(p.omset || 0) + " (" + (p.pesanan || 0).toLocaleString("id-ID") + " pesanan)\n"; });
       t += "\n";
       hitungStatMetrik();
@@ -673,29 +675,30 @@ stok: (function () { const v = ambilKolom(r, ["Stok", "Stock", "Sisa Stok", "Jum
         if (adaKualitas) { qNorm = Math.max(persentil(p.cvr || 0, statMetrik.cvr), persentil(p.repeat || 0, statMetrik.repeat)); }
         else { qNorm = persentil(p.pesanan || 0, statMetrik.pesanan); }
         return { p: p, skor: qNorm * (1 - pOmset), qNorm: qNorm, pOmset: pOmset };
-      }).filter((g) => stokAda(g.p) && g.qNorm >= 0.7 && g.pOmset <= 0.4 && g.skor > 0).sort((a, b) => b.skor - a.skor).slice(0, 3);
-      t += "HIDDEN GEMS (POTENSI DIDORONG)\n";
-      if (gems.length === 0) { t += "- Belum ada terdeteksi\n"; } else { gems.forEach((g, i) => { t += (i + 1) + ". " + g.p.nama + " - omset " + formatRupiah(g.p.omset || 0) + "\n"; }); }
+      }).filter((g) => stokSiap(g.p) && g.qNorm >= 0.7 && g.pOmset <= 0.4 && g.skor > 0).sort((a, b) => b.skor - a.skor).slice(0, 3);
+      t += "*JANGAN DILEWATIN (Potensi Tersembunyi)*\n";
+      if (gems.length === 0) { t += "Belum ada yang kedeteksi minggu ini. Lengkapi data CVR/Repeat & stok biar makin akurat.\n"; } else { t += "Sinyalnya kuat tapi omset masih kecil, worth digas:\n"; gems.forEach((g) => { t += "- " + g.p.nama + " - baru " + formatRupiah(g.p.omset || 0) + (g.p.stok != null ? " (stok " + g.p.stok + ")" : "") + "\n"; }); }
       t += "\n";
       const totSpend = iklanList.reduce((s, c) => s + (c.biaya || 0), 0);
       const totAdSales = iklanList.reduce((s, c) => s + (c.omzet || 0), 0);
       if (totSpend > 0) {
         const roasOfC = (c) => (c.roas && c.roas > 0) ? c.roas : ((c.biaya || 0) > 0 ? (c.omzet || 0) / c.biaya : 0);
         const boncosC = iklanList.filter((c) => roasOfC(c) < 2);
-        t += "PERFORMA IKLAN\n";
-        t += "- Total Biaya Iklan : " + formatRupiah(totSpend) + "\n";
-        t += "- Omset dari Iklan  : " + formatRupiah(totAdSales) + "\n";
-        t += "- ROAS Keseluruhan  : " + (totAdSales / totSpend).toFixed(2) + "x\n";
-        t += "- Campaign Boncos   : " + boncosC.length + " campaign (ROAS < 2, perlu dibenahi)\n\n";
+        t += "*PERFORMA IKLAN*\n";
+        t += "- Biaya iklan: " + formatRupiah(totSpend) + "\n";
+        t += "- Omset dari iklan: " + formatRupiah(totAdSales) + "\n";
+        var rg = totAdSales / totSpend; t += "- ROAS: " + rg.toFixed(2) + "x (" + (rg >= 4 ? "sehat" : rg >= 2 ? "cukup" : "boncos") + ")\n";
+        t += "- Campaign boncos: " + boncosC.length + " (ROAS < 2, perlu dibenahi)\n\n";
       }
-      t += "PERLU PERHATIAN\n";
-      t += "- " + perhatian.length + " produk belum ada penjualan (evaluasi listing/iklan atau drop)\n\n";
-      t += "REKOMENDASI MINGGU INI\n";
-      t += "1. Pertahankan & scale stok produk Top 5.\n";
-      t += "2. Dorong iklan ke Hidden Gems biar omset naik.\n";
-      t += "3. Review/optimasi atau drop produk yang belum ada penjualan.\n";
-      if (cL > 0) t += "4. Evaluasi " + cL + " produk Low Level - perbaiki atau ganti.\n";
-      el.value = t;
+      t += "*PERLU PERHATIAN*\n";
+      t += (perhatian.length > 0 ? "Ada " + perhatian.length + " produk yang belum kejual sama sekali - evaluasi listing/iklan atau pertimbangin drop." : "Mantap, semua produk udah ada penjualan.") + "\n\n";
+      t += "*RENCANA AKSI MINGGU DEPAN*\n";
+      t += "1. Pertahanin & scale-up produk Top 5 (jaga stok jangan sampe kosong).\n";
+      t += "2. Gas iklan ke Hidden Gems biar omsetnya nyusul.\n";
+      t += "3. Benahi/optimasi listing produk yang belum jalan, atau drop kalau tetep sepi.\n";
+      if (cL > 0) t += "4. Evaluasi " + cL + " produk Low Level — perbaiki atau ganti.\n";
+      t += "\nSemangat tim, yuk kejar target minggu depan.\n";
+el.value = t;
     }
     document.getElementById("btn-copy-laporan").addEventListener("click", () => {
       const ta = document.getElementById("laporan");
