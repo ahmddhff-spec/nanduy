@@ -62,7 +62,7 @@
 
   <section class="card" id="gems-card">
     <h2>💎 Hidden Gems — Potensi Tersembunyi</h2>
-    <p style="font-size:13px;color:#666;margin-bottom:12px">Produk dengan sinyal bagus (konversi/permintaan tinggi) tapi omset masih kecil — paling worth buat didorong iklan/exposure.</p>
+    <p style="font-size:13px;color:#666;margin-bottom:12px">Produk yang <strong>bener-bener potensial</strong>: sinyal kuat (konversi/repeat/permintaan di papan atas) tapi omset masih kecil <strong>DAN stok masih tersedia</strong> — paling worth buat digas iklan/exposure. (Isi kolom Stok biar yang kosong otomatis disaring.)</p>
     <div id="gems"></div>
   </section>
 
@@ -114,7 +114,8 @@
         <label>Klik Iklan <input type="number" id="klik" min="0" /></label>
         <label>Tampilan Iklan <input type="number" id="tampilan" min="0" /></label>
         <label>Harga Jual (Rp) <input type="number" id="hargaJual" min="0" /></label>
-        <label>Catatan <input type="text" id="catatan" /></label>
+        <label>Stok Tersedia <input type="number" id="stok" min="0" placeholder="sisa stok" /></label>
+<label>Catatan <input type="text" id="catatan" /></label>
       </div>
       <div class="actions">
         <button type="submit" id="btn-simpan">Simpan Produk</button>
@@ -210,7 +211,8 @@
       if (saran.length === 0) return { teks: "✅ Semua faktor sudah kuat, pertahankan!", ok: true };
       return { teks: saran.join(" "), ok: false };
     }
-    function formatRupiah(n) {
+    function stokAda(p) { return p.stok == null || (p.stok || 0) > 0; }
+function formatRupiah(n) {
       n = n || 0;
       if (n >= 1e9) return "Rp " + (n / 1e9).toFixed(1).replace(".0", "") + "M";
       if (n >= 1e6) return "Rp " + (n / 1e6).toFixed(1).replace(".0", "") + "jt";
@@ -241,6 +243,7 @@
         tampilan: num("tampilan"),
         roas: (num("biayaIklan") > 0 ? +((num("omsetIklan") / num("biayaIklan")).toFixed(2)) : 0),
         hargaJual: num("hargaJual"),
+stok: (function () { const v = document.getElementById("stok").value; return v === "" ? null : (parseInt(String(v).replace(/[^0-9-]/g, ""), 10) || 0); })(),
         catatan: document.getElementById("catatan").value.trim(),
       };
     }
@@ -280,6 +283,7 @@
       document.getElementById("klik").value = p.klik || "";
       document.getElementById("tampilan").value = p.tampilan || "";
       document.getElementById("hargaJual").value = p.hargaJual || "";
+document.getElementById("stok").value = (p.stok === null || p.stok === undefined) ? "" : p.stok;
       document.getElementById("catatan").value = p.catatan || "";
       document.getElementById("form-title").textContent = "✏️ Edit Produk";
       document.getElementById("btn-simpan").textContent = "Update Produk";
@@ -322,7 +326,7 @@
           "Skor Total": total, "Level": tentukanLevel(total).label,
           "Omset": p.omset, "Pesanan": p.pesanan, "CVR (%)": p.cvr, "Repeat Rate (%)": p.repeat,
           "Biaya Iklan": p.biayaIklan || 0, "Omset Iklan": p.omsetIklan || 0, "ROAS": roasNilai(p), "Klik": p.klik || 0, "Tampilan": p.tampilan || 0,
-          "Harga Jual": p.hargaJual, "Catatan": p.catatan, "Fokus Perbaikan": fokusPerbaikan(p).teks,
+          "Harga Jual": p.hargaJual, "Stok": (p.stok == null ? "" : p.stok), "Catatan": p.catatan, "Fokus Perbaikan": fokusPerbaikan(p).teks,
         };
       });
       const ws = XLSX.utils.json_to_sheet(baris);
@@ -411,6 +415,7 @@
             cvr: angkaDesimal(ambilKolom(r, ["CVR", "CVR (%)", "Tingkat Konversi", "Conversion Rate", "Conversion", ["tingkat", "konversi"], ["conversion"]])),
             repeat: angkaDesimal(ambilKolom(r, ["Repeat Rate", "Repeat Rate (%)", "Tingkat Pembelian Ulang", "Repeat", ["pembelian", "ulang"]])),
             hargaJual: angkaInt(ambilKolom(r, ["Harga Jual", "Harga", "Price"])),
+stok: (function () { const v = ambilKolom(r, ["Stok", "Stock", "Sisa Stok", "Jumlah Stok", "Stok Tersedia", "Persediaan", "Stok Produk", ["stok"], ["stock"]]); return (v === "" || v === null || v === undefined) ? null : angkaInt(v); })(),
             catatan: String(ambilKolom(r, ["Catatan", "Notes"]) || ""),
           });
         });
@@ -576,10 +581,10 @@
           qNorm = persentil(p.pesanan || 0, statMetrik.pesanan); sinyal = "pesanan";
         }
         return { p: p, skor: qNorm * (1 - pOmset), qNorm: qNorm, pOmset: pOmset, sinyal: sinyal };
-      }).filter((g) => g.qNorm >= 0.5 && g.pOmset <= 0.6 && g.skor > 0);
+      }).filter((g) => stokAda(g.p) && g.qNorm >= 0.7 && g.pOmset <= 0.4 && g.skor > 0);
       gems.sort((a, b) => b.skor - a.skor);
       const top = gems.slice(0, 6);
-      if (top.length === 0) { el.innerHTML = '<p style="color:#999">Belum ada hidden gem terdeteksi dari data saat ini. Lengkapi data CVR/Repeat biar deteksinya makin akurat.</p>'; return; }
+      if (top.length === 0) { el.innerHTML = '<p style="color:#999">Belum ada hidden gem yang <strong>benar-benar potensial</strong> saat ini (kriteria ketat: sinyal sangat kuat + omset masih kecil + stok tersedia). Lengkapi data CVR/Repeat & kolom Stok biar deteksinya makin akurat.</p>'; return; }
       el.innerHTML = top.map((g) => {
         const p = g.p;
         let alasan;
@@ -587,7 +592,7 @@
         else if (g.sinyal === "repeat") alasan = "Repeat rate tinggi (" + (p.repeat || 0) + "%) tapi omset kecil — pembeli loyal, layak di-scale.";
         else alasan = "Permintaan lumayan (" + (p.pesanan || 0).toLocaleString("id-ID") + " pesanan) tapi omset masih kecil — dorong exposure / pertimbangkan naikin harga.";
         return '<div style="border-left:3px solid #8b5cf6;padding:8px 12px;margin-bottom:10px;background:#faf8ff;border-radius:0 8px 8px 0">' +
-          '<strong>💎 ' + p.nama + '</strong> <span style="color:#888;font-size:12px">· ' + p.kategori + ' · Omset ' + formatRupiah(p.omset || 0) + '</span>' +
+          '<strong>💎 ' + p.nama + '</strong> <span style="color:#888;font-size:12px">· ' + p.kategori + ' · Omset ' + formatRupiah(p.omset || 0) + (p.stok != null ? ' · Stok ' + p.stok : '') + '</span>' +
           '<div style="font-size:12px;color:#6b21a8;margin-top:3px">' + alasan + '</div>' +
         '</div>';
       }).join("");
@@ -656,7 +661,7 @@
         if (adaKualitas) { qNorm = Math.max(persentil(p.cvr || 0, statMetrik.cvr), persentil(p.repeat || 0, statMetrik.repeat)); }
         else { qNorm = persentil(p.pesanan || 0, statMetrik.pesanan); }
         return { p: p, skor: qNorm * (1 - pOmset), qNorm: qNorm, pOmset: pOmset };
-      }).filter((g) => g.qNorm >= 0.5 && g.pOmset <= 0.6 && g.skor > 0).sort((a, b) => b.skor - a.skor).slice(0, 3);
+      }).filter((g) => stokAda(g.p) && g.qNorm >= 0.7 && g.pOmset <= 0.4 && g.skor > 0).sort((a, b) => b.skor - a.skor).slice(0, 3);
       t += "HIDDEN GEMS (POTENSI DIDORONG)\n";
       if (gems.length === 0) { t += "- Belum ada terdeteksi\n"; } else { gems.forEach((g, i) => { t += (i + 1) + ". " + g.p.nama + " - omset " + formatRupiah(g.p.omset || 0) + "\n"; }); }
       t += "\n";
