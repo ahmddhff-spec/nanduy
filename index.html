@@ -127,6 +127,7 @@
     <input type="file" id="file-import" accept=".xlsx,.xls" hidden />
     <button id="btn-import" class="ghost">⬆️ Import Excel</button>
     <button id="btn-export" class="ghost">⬇️ Export Excel</button>
+    <button id="btn-reset" class="ghost">🗑️ Hapus Semua Data</button>
   </footer>
 
   <script>
@@ -289,8 +290,13 @@
     function ambilKolom(row, kandidat) {
       const keys = Object.keys(row);
       for (const c of kandidat) {
-        const found = keys.find((k) => k.trim().toLowerCase() === c.toLowerCase());
-        if (found !== undefined) return row[found];
+        if (Array.isArray(c)) {
+          const f = keys.find((k) => { const kl = k.trim().toLowerCase(); return c.every((w) => kl.includes(w.toLowerCase())); });
+          if (f !== undefined) return row[f];
+        } else {
+          const f = keys.find((k) => k.trim().toLowerCase() === c.toLowerCase());
+          if (f !== undefined) return row[f];
+        }
       }
       return "";
     }
@@ -298,6 +304,11 @@
     function angkaDesimal(v) { if (typeof v === "number") return v; if (!v) return 0; const n = parseFloat(String(v).replace(/%/g, "").trim().replace(/,/g, ".").replace(/[^0-9.-]/g, "")); return isNaN(n) ? 0 : n; }
 
     document.getElementById("btn-import").addEventListener("click", () => { document.getElementById("file-import").click(); });
+    document.getElementById("btn-reset").addEventListener("click", () => {
+      if (!confirm("Yakin hapus SEMUA data produk? Tindakan ini tidak bisa dibatalkan.")) return;
+      produkList = [];
+      simpan(); render();
+    });
     document.getElementById("file-import").addEventListener("change", (e) => {
       const file = e.target.files[0];
       if (!file) return;
@@ -314,10 +325,10 @@
             permintaan: angkaInt(ambilKolom(r, ["Skor Permintaan", "Permintaan"])),
             kompetisi: angkaInt(ambilKolom(r, ["Skor Kompetisi", "Kompetisi"])),
             tren: angkaInt(ambilKolom(r, ["Skor Tren", "Tren"])),
-            omset: angkaInt(ambilKolom(r, ["Omset", "Omzet", "Penjualan (Rp)", "Total Penjualan", "GMV", "Penjualan"])),
-            pesanan: angkaInt(ambilKolom(r, ["Pesanan", "Jumlah Pesanan", "Produk Terjual", "Terjual", "Pesanan Siap Dikirim"])),
-            cvr: angkaDesimal(ambilKolom(r, ["CVR", "CVR (%)", "Tingkat Konversi", "Conversion Rate", "Conversion"])),
-            repeat: angkaDesimal(ambilKolom(r, ["Repeat Rate", "Repeat Rate (%)", "Tingkat Pembelian Ulang", "Repeat"])),
+            omset: angkaInt(ambilKolom(r, ["Penjualan (Rp)", "Total Penjualan", "Omset", "Omzet", "GMV", ["penjualan", "rp"], ["penjualan"]])),
+            pesanan: angkaInt(ambilKolom(r, ["Pesanan", "Jumlah Pesanan", "Produk Terjual", "Terjual", "Pesanan Siap Dikirim", ["produk", "terjual"]])),
+            cvr: angkaDesimal(ambilKolom(r, ["CVR", "CVR (%)", "Tingkat Konversi", "Conversion Rate", "Conversion", ["tingkat", "konversi"], ["conversion"]])),
+            repeat: angkaDesimal(ambilKolom(r, ["Repeat Rate", "Repeat Rate (%)", "Tingkat Pembelian Ulang", "Repeat", ["pembelian", "ulang"]])),
             hargaJual: angkaInt(ambilKolom(r, ["Harga Jual", "Harga", "Price"])),
             catatan: String(ambilKolom(r, ["Catatan", "Notes"]) || ""),
           });
