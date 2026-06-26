@@ -68,7 +68,7 @@
 
   <section class="card" id="iklan-card">
     <h2>📈 Analisis Iklan (Ads)</h2>
-    <p style="font-size:13px;color:#666;margin-bottom:12px">Performa iklan per produk: ROAS, ACOS, biaya, & rekomendasi. Import laporan iklan dulu (tombol 📣 di bawah).</p>
+    <p style="font-size:13px;color:#666;margin-bottom:12px">Performa iklan per campaign: ROAS, ACOS, biaya, & rekomendasi. Import laporan iklan Shopee (CPC/GMV) dulu lewat tombol 📣 di bawah.</p>
     <div id="iklan"></div>
   </section>
 
@@ -145,7 +145,7 @@
     <table id="tabel">
       <thead><tr>
         <th>#</th><th>Produk</th><th>Level</th><th>Skor</th><th>Kategori</th>
-        <th>Omset</th><th>Pesanan</th><th>CVR</th><th>Repeat</th><th>ROAS</th><th>Fokus Perbaikan</th><th></th>
+        <th>Omset</th><th>Pesanan</th><th>CVR</th><th>Repeat</th><th>Fokus Perbaikan</th><th></th>
       </tr></thead>
       <tbody id="tbody"></tbody>
     </table>
@@ -163,7 +163,9 @@
 
   <script>
     const STORAGE_KEY = "produkPotensial";
+    const IKLAN_KEY = "iklanData";
     let produkList = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+    let iklanList = JSON.parse(localStorage.getItem(IKLAN_KEY) || "[]");
     let editId = null;
     let filterAktif = "all";
     let sortBy = "skor";
@@ -363,8 +365,10 @@
 
     document.getElementById("btn-import").addEventListener("click", () => { document.getElementById("file-import").click(); });
     document.getElementById("btn-reset").addEventListener("click", () => {
-      if (!confirm("Yakin hapus SEMUA data produk? Tindakan ini tidak bisa dibatalkan.")) return;
+      if (!confirm("Yakin hapus SEMUA data produk & iklan? Tindakan ini tidak bisa dibatalkan.")) return;
       produkList = [];
+      iklanList = [];
+      localStorage.removeItem(IKLAN_KEY);
       simpan(); render();
     });
     document.getElementById("file-import").addEventListener("change", (e) => {
@@ -410,7 +414,6 @@
     // ===== Import Data Iklan (cocokin by nama produk) =====
     function normNama(s) { return String(s || "").trim().toLowerCase().replace(/\s+/g, " "); }
     document.getElementById("btn-import-ads").addEventListener("click", () => {
-      if (produkList.length === 0) { alert("Import data produk dulu ya, baru import data iklan biar bisa dicocokin per produk."); return; }
       document.getElementById("file-import-ads").click();
     });
     document.getElementById("file-import-ads").addEventListener("change", (e) => {
@@ -430,32 +433,25 @@
         }
         const ws = wb.Sheets[wb.SheetNames[0]];
         const baris = bacaBarisPintar(ws);
-        const peta = {};
-        produkList.forEach((p) => { peta[normNama(p.nama)] = p; });
-        let cocok = 0, takCocok = 0; const gagal = [];
-        baris.forEach((r) => {
-          const nama = ambilKolom(r, ["Nama Produk", "Nama Barang", "Product Name", "Produk", "Nama", ["nama", "produk"], ["product", "name"], ["nama"], ["product"]]);
-          const key = normNama(nama);
-          let p = peta[key];
-          if (!p && key) { p = produkList.find((x) => { const n = normNama(x.nama); return n && (n.includes(key) || key.includes(n)); }); }
-          if (!p) { takCocok++; if (nama) gagal.push(String(nama)); return; }
-          p.biayaIklan = angkaInt(ambilKolom(r, ["Biaya Iklan", "Biaya", "Ad Spend", "Spend", "Pengeluaran", ["biaya", "iklan"]]));
-          p.omsetIklan = angkaInt(ambilKolom(r, ["Omset Iklan", "Penjualan dari Iklan", "Penjualan Iklan", "Ad Sales", "GMV Iklan", "Omzet Iklan", ["penjualan", "iklan"], ["omset", "iklan"]]));
-          p.klik = angkaInt(ambilKolom(r, ["Klik", "Clicks", "Jumlah Klik", ["klik"]]));
-          p.tampilan = angkaInt(ambilKolom(r, ["Tampilan", "Dilihat", "Impression", "Impressions", "Iklan Dilihat", ["dilihat"], ["impression"]]));
-          const roasRaw = angkaDesimal(ambilKolom(r, ["ROAS", "Roas", ["roas"]]));
-          p.roas = roasRaw > 0 ? roasRaw : (p.biayaIklan > 0 ? +((p.omsetIklan / p.biayaIklan).toFixed(2)) : 0);
-          cocok++;
-        });
-        simpan(); render();
-        let msg = "Data iklan kecocokin ke " + cocok + " produk.";
-        if (takCocok > 0) msg += " " + takCocok + " baris iklan TIDAK ketemu produknya. Contoh nama di file iklan: " + gagal.slice(0, 3).join(" | ");
-        if (cocok === 0 && baris.length > 0) {
-          msg += "\n\nKolom kebaca di file iklan: " + Object.keys(baris[0]).join(" | ");
-          msg += "\n\nNama produk di tools: " + produkList.slice(0, 3).map((p) => p.nama).join(" | ");
-          msg += "\n\nKalau kolom di atas nyatu jadi satu kolom panjang = pemisah CSV beda. Screenshot pesan ini & kirim ke aku ya.";
+        const masuk = baris.map((r) => {
+          const nama = String(ambilKolom(r, ["Nama Iklan", "Nama Produk", "Produk", "Nama", ["nama", "iklan"], ["nama"]]) || "Tanpa Nama");
+          const biaya = angkaInt(ambilKolom(r, ["Biaya", "Biaya Iklan", "Ad Spend", "Spend", "Pengeluaran", ["biaya"]]));
+          const omzet = angkaInt(ambilKolom(r, ["Omzet Penjualan", "Omset Iklan", "Penjualan dari Iklan", "GMV", "Ad Sales", ["omzet", "penjualan"], ["penjualan"], ["omzet"]]));
+          const klik = angkaInt(ambilKolom(r, ["Jumlah Klik", "Klik", "Clicks", ["klik"]]));
+          const dilihat = angkaInt(ambilKolom(r, ["Dilihat", "Tampilan", "Impression", "Impressions", ["dilihat"], ["tampilan"]]));
+          const terjual = angkaInt(ambilKolom(r, ["Produk Terjual", "Terjual", "Pesanan", ["terjual"]]));
+          const roasCol = angkaDesimal(ambilKolom(r, ["Efektifitas Iklan", "ROAS", "Roas", ["efektifitas"], ["roas"]]));
+          const roas = roasCol > 0 ? roasCol : (biaya > 0 ? +((omzet / biaya).toFixed(2)) : 0);
+          return { nama: nama, biaya: biaya, omzet: omzet, klik: klik, dilihat: dilihat, terjual: terjual, roas: roas };
+        }).filter((c) => (c.biaya || 0) > 0 || (c.omzet || 0) > 0);
+        iklanList = masuk;
+        localStorage.setItem(IKLAN_KEY, JSON.stringify(iklanList));
+        render();
+        if (iklanList.length === 0) {
+          alert("File iklan kebaca, tapi nggak nemu baris berisi biaya/omzet. Kolom yang kebaca: " + (baris[0] ? Object.keys(baris[0]).join(" | ") : "-"));
+        } else {
+          alert("Berhasil import " + iklanList.length + " campaign iklan! Cek panel Analisis Iklan di atas.");
         }
-        alert(msg);
         e.target.value = "";
       };
       if (isCsv) reader.readAsText(file); else reader.readAsArrayBuffer(file);
@@ -506,7 +502,6 @@
           '<td>' + (p.pesanan || 0).toLocaleString("id-ID") + '</td>' +
           '<td>' + (p.cvr || 0) + '%</td>' +
           '<td>' + (p.repeat || 0) + '%</td>' +
-          '<td>' + roasTxt(p) + '</td>' +
           '<td class="tip ' + (fokus.ok ? "ok" : "") + '">' + fokus.teks + '</td>' +
           '<td class="row-actions">' +
             '<button onclick="editProduk(' + p.id + ')">Edit</button>' +
@@ -590,28 +585,26 @@
 
     function renderIklan() {
       const el = document.getElementById("iklan");
-      const roasOf = (p) => (p.roas && p.roas > 0) ? p.roas : ((p.biayaIklan || 0) > 0 ? (p.omsetIklan || 0) / p.biayaIklan : 0);
-      const adaIklan = produkList.filter((p) => (p.biayaIklan || 0) > 0 || (p.omsetIklan || 0) > 0);
-      if (adaIklan.length === 0) { el.innerHTML = '<p style="color:#999">Belum ada data iklan. Klik <strong>📣 Import Data Iklan</strong> di bawah (laporan iklan dicocokin otomatis by nama produk). Setelah ada data, ROAS/ACOS & rekomendasi muncul di sini.</p>'; return; }
-      const totalSpend = produkList.reduce((s, p) => s + (p.biayaIklan || 0), 0);
-      const totalAdSales = produkList.reduce((s, p) => s + (p.omsetIklan || 0), 0);
+      if (!iklanList || iklanList.length === 0) { el.innerHTML = '<p style="color:#999">Belum ada data iklan. Klik <strong>📣 Import Data Iklan</strong> di bawah, lalu pilih file laporan iklan Shopee (CPC/GMV) kamu. Nanti ROAS, ACOS, & rekomendasi per campaign muncul di sini.</p>'; return; }
+      const totalSpend = iklanList.reduce((s, c) => s + (c.biaya || 0), 0);
+      const totalAdSales = iklanList.reduce((s, c) => s + (c.omzet || 0), 0);
       const roasGlobal = totalSpend > 0 ? totalAdSales / totalSpend : 0;
       const acosGlobal = totalAdSales > 0 ? (totalSpend / totalAdSales) * 100 : 0;
-      const totalKlik = produkList.reduce((s, p) => s + (p.klik || 0), 0);
-      const totalTampil = produkList.reduce((s, p) => s + (p.tampilan || 0), 0);
+      const totalKlik = iklanList.reduce((s, c) => s + (c.klik || 0), 0);
+      const totalTampil = iklanList.reduce((s, c) => s + (c.dilihat || 0), 0);
+      const totalTerjual = iklanList.reduce((s, c) => s + (c.terjual || 0), 0);
       const ctrGlobal = totalTampil > 0 ? (totalKlik / totalTampil) * 100 : 0;
-      const untung = adaIklan.filter((p) => roasOf(p) >= 4).sort((a, b) => roasOf(b) - roasOf(a));
-      const sedang = adaIklan.filter((p) => roasOf(p) >= 2 && roasOf(p) < 4).sort((a, b) => roasOf(b) - roasOf(a));
-      const boncos = adaIklan.filter((p) => roasOf(p) > 0 && roasOf(p) < 2).sort((a, b) => roasOf(a) - roasOf(b));
-      const spendBoncos = boncos.reduce((s, p) => s + (p.biayaIklan || 0), 0);
+      const roasOf = (c) => (c.roas && c.roas > 0) ? c.roas : ((c.biaya || 0) > 0 ? (c.omzet || 0) / c.biaya : 0);
+      const untung = iklanList.filter((c) => roasOf(c) >= 4).sort((a, b) => roasOf(b) - roasOf(a));
+      const sedang = iklanList.filter((c) => roasOf(c) >= 2 && roasOf(c) < 4).sort((a, b) => roasOf(b) - roasOf(a));
+      const boncos = iklanList.filter((c) => roasOf(c) < 2).sort((a, b) => (b.biaya || 0) - (a.biaya || 0));
+      const spendBoncos = boncos.reduce((s, c) => s + (c.biaya || 0), 0);
       const box = (lbl, val, sub) => '<div class="stat-box"><div class="lbl">' + lbl + '</div><div class="num">' + val + '</div>' + (sub ? '<div class="sub">' + sub + '</div>' : '') + '</div>';
-      let html = '<div class="stats" style="margin-bottom:16px">' + box("Total Biaya Iklan", formatRupiah(totalSpend), totalKlik.toLocaleString("id-ID") + " klik") + box("Omset dari Iklan", formatRupiah(totalAdSales), "CTR " + ctrGlobal.toFixed(2) + "%") + box("ROAS Keseluruhan", roasGlobal.toFixed(2) + "x", roasGlobal >= 4 ? "🟢 Sehat" : roasGlobal >= 2 ? "🟡 Cukup" : "🔴 Boncos") + box("ACOS Keseluruhan", acosGlobal.toFixed(1) + "%", "biaya / omset iklan") + '</div>';
-      const baris = (arr, warna, label, tujuan) => { if (arr.length === 0) return ''; const items = arr.slice(0, 6).map((p) => '<li><strong>' + p.nama + '</strong> — ROAS ' + roasOf(p).toFixed(2) + 'x · biaya ' + formatRupiah(p.biayaIklan || 0) + ' · omset iklan ' + formatRupiah(p.omsetIklan || 0) + '</li>').join(""); return '<div style="border-left:4px solid ' + warna + ';padding:10px 14px;margin-bottom:12px;border-radius:0 8px 8px 0;background:#fafafa"><strong style="color:' + warna + '">' + label + ' (' + arr.length + ')</strong><div style="font-size:12px;color:#666;margin:3px 0 6px">' + tujuan + '</div><ul style="margin:0 0 0 18px;font-size:12px;line-height:1.7">' + items + '</ul></div>'; };
-      html += baris(untung, "#1a7f37", "🟢 Iklan Untung (ROAS ≥ 4)", "Gas! Naikin budget bertahap selama ROAS stabil — ini mesin uang kamu.");
-      html += baris(sedang, "#9a6700", "🟡 Iklan Cukup (ROAS 2-4)", "Optimasi: rapikan keyword, pause keyword boros, perbaiki halaman produk biar ROAS naik.");
-      html += baris(boncos, "#c1271e", "🔴 Iklan Boncos (ROAS < 2)", "Rugi: turunin/pause budget, benahi listing & targeting dulu. Total biaya nyangkut: " + formatRupiah(spendBoncos) + ".");
-      const belumIklan = produkList.filter((p) => (p.biayaIklan || 0) === 0 && (p.omset || 0) > 0).sort((a, b) => (b.omset || 0) - (a.omset || 0));
-      if (belumIklan.length > 0) { html += '<div style="border-left:4px solid #2383e2;padding:10px 14px;border-radius:0 8px 8px 0;background:#f0f7ff"><strong style="color:#2383e2">🔵 Laku tapi Belum Diiklanin (' + belumIklan.length + ')</strong><div style="font-size:12px;color:#666;margin:3px 0 6px">Udah jualan organik — dikasih iklan bisa scale lebih cepat. Mulai budget kecil.</div><ul style="margin:0 0 0 18px;font-size:12px;line-height:1.7">' + belumIklan.slice(0, 5).map((p) => '<li><strong>' + p.nama + '</strong> — omset organik ' + formatRupiah(p.omset || 0) + '</li>').join("") + '</ul></div>'; }
+      let html = '<div class="stats" style="margin-bottom:16px">' + box("Total Biaya Iklan", formatRupiah(totalSpend), totalKlik.toLocaleString("id-ID") + " klik") + box("Omset dari Iklan", formatRupiah(totalAdSales), totalTerjual.toLocaleString("id-ID") + " terjual") + box("ROAS Keseluruhan", roasGlobal.toFixed(2) + "x", roasGlobal >= 4 ? "🟢 Sehat" : roasGlobal >= 2 ? "🟡 Cukup" : "🔴 Boncos") + box("ACOS Keseluruhan", acosGlobal.toFixed(1) + "%", "CTR " + ctrGlobal.toFixed(2) + "%") + '</div>';
+      const baris = (arr, warna, label, tujuan) => { if (arr.length === 0) return ''; const items = arr.slice(0, 8).map((c) => '<li><strong>' + c.nama + '</strong> — ROAS ' + roasOf(c).toFixed(2) + 'x · biaya ' + formatRupiah(c.biaya || 0) + ' · omset ' + formatRupiah(c.omzet || 0) + '</li>').join(""); return '<div style="border-left:4px solid ' + warna + ';padding:10px 14px;margin-bottom:12px;border-radius:0 8px 8px 0;background:#fafafa"><strong style="color:' + warna + '">' + label + ' (' + arr.length + ')</strong><div style="font-size:12px;color:#666;margin:3px 0 6px">' + tujuan + '</div><ul style="margin:0 0 0 18px;font-size:12px;line-height:1.7">' + items + '</ul></div>'; };
+      html += baris(untung, "#1a7f37", "🟢 Campaign Untung (ROAS ≥ 4)", "Gas! Naikin budget bertahap selama ROAS stabil — ini mesin uang kamu.");
+      html += baris(sedang, "#9a6700", "🟡 Campaign Cukup (ROAS 2-4)", "Optimasi: rapikan keyword, pause keyword boros, perbaiki listing biar ROAS naik.");
+      html += baris(boncos, "#c1271e", "🔴 Campaign Boncos (ROAS < 2)", "Rugi: turunin/pause budget, benahi listing & targeting dulu. Total biaya nyangkut: " + formatRupiah(spendBoncos) + ".");
       el.innerHTML = html;
     }
 
@@ -657,16 +650,16 @@
       t += "HIDDEN GEMS (POTENSI DIDORONG)\n";
       if (gems.length === 0) { t += "- Belum ada terdeteksi\n"; } else { gems.forEach((g, i) => { t += (i + 1) + ". " + g.p.nama + " - omset " + formatRupiah(g.p.omset || 0) + "\n"; }); }
       t += "\n";
-      const totSpend = produkList.reduce((s, p) => s + (p.biayaIklan || 0), 0);
-      const totAdSales = produkList.reduce((s, p) => s + (p.omsetIklan || 0), 0);
+      const totSpend = iklanList.reduce((s, c) => s + (c.biaya || 0), 0);
+      const totAdSales = iklanList.reduce((s, c) => s + (c.omzet || 0), 0);
       if (totSpend > 0) {
-        const roasOfR = (p) => (p.roas && p.roas > 0) ? p.roas : ((p.biayaIklan || 0) > 0 ? (p.omsetIklan || 0) / p.biayaIklan : 0);
-        const boncosR = produkList.filter((p) => (p.biayaIklan || 0) > 0 && roasOfR(p) < 2);
+        const roasOfC = (c) => (c.roas && c.roas > 0) ? c.roas : ((c.biaya || 0) > 0 ? (c.omzet || 0) / c.biaya : 0);
+        const boncosC = iklanList.filter((c) => roasOfC(c) < 2);
         t += "PERFORMA IKLAN\n";
         t += "- Total Biaya Iklan : " + formatRupiah(totSpend) + "\n";
         t += "- Omset dari Iklan  : " + formatRupiah(totAdSales) + "\n";
         t += "- ROAS Keseluruhan  : " + (totAdSales / totSpend).toFixed(2) + "x\n";
-        t += "- Iklan Boncos      : " + boncosR.length + " produk (ROAS < 2, perlu dibenahi)\n\n";
+        t += "- Campaign Boncos   : " + boncosC.length + " campaign (ROAS < 2, perlu dibenahi)\n\n";
       }
       t += "PERLU PERHATIAN\n";
       t += "- " + perhatian.length + " produk belum ada penjualan (evaluasi listing/iklan atau drop)\n\n";
