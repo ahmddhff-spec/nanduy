@@ -402,8 +402,9 @@ document.getElementById("stok").value = (p.stok === null || p.stok === undefined
         }
         const ws = wb.Sheets[wb.SheetNames[0]];
         const baris = bacaBarisPintar(ws);
+        let nAdd = 0, nUpdate = 0, nStok = 0, nSkip = 0;
         baris.forEach((r) => {
-          produkList.push({
+          const d = ({
             id: Date.now() + Math.floor(Math.random() * 100000),
             nama: String(ambilKolom(r, ["Nama Produk", "Nama Barang", "Product Name", "Produk", "Nama"]) || "Tanpa Nama"),
             kategori: String(ambilKolom(r, ["Kategori", "Category"]) || "Fashion"),
@@ -418,9 +419,20 @@ document.getElementById("stok").value = (p.stok === null || p.stok === undefined
 stok: (function () { const v = ambilKolom(r, ["Stok", "Stock", "Sisa Stok", "Jumlah Stok", "Stok Tersedia", "Persediaan", "Stok Produk", ["stok"], ["stock"]]); return (v === "" || v === null || v === undefined) ? null : angkaInt(v); })(),
             catatan: String(ambilKolom(r, ["Catatan", "Notes"]) || ""),
           });
+          const ada = produkList.find((p) => normNama(p.nama) === normNama(d.nama));
+          if (ada) {
+            if (d.kategori && d.kategori !== "Fashion") ada.kategori = d.kategori;
+            ["permintaan", "kompetisi", "tren", "omset", "pesanan", "cvr", "repeat", "hargaJual"].forEach((k) => { if (d[k]) ada[k] = d[k]; });
+            if (d.stok != null) { ada.stok = d.stok; nStok++; }
+            if (d.catatan) ada.catatan = d.catatan;
+            nUpdate++;
+          } else {
+            const adaSinyal = d.omset || d.pesanan || d.cvr || d.repeat || d.permintaan || d.kompetisi || d.tren || d.hargaJual;
+            if (adaSinyal) { if (d.stok != null) nStok++; produkList.push(d); nAdd++; } else { nSkip++; }
+          }
         });
         simpan(); render();
-        alert("Berhasil import " + baris.length + " produk dari file!");
+        alert("Import selesai!\n• " + nAdd + " produk baru\n• " + nUpdate + " produk ke-update (cocok by nama)\n• " + nStok + " produk dapat data stok" + (nSkip > 0 ? "\n• " + nSkip + " baris dilewati (nama nggak cocok)" : ""));
         e.target.value = "";
       };
       if (isCsv) reader.readAsText(file); else reader.readAsArrayBuffer(file);
