@@ -55,6 +55,14 @@
   </header>
 
   <section class="stats" id="stats"></section>
+<section class="card" id="target-card">
+<h2>🎯 Target Omset Bulanan</h2>
+<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px">
+<label style="flex:1;min-width:220px">Target omset bulan ini (Rp) <input type="number" id="inputTarget" min="0" placeholder="contoh: 500000000" /></label>
+<button onclick="simpanTarget()">Simpan Target</button>
+</div>
+<div id="target"></div>
+</section>
 <section class="card" id="ai-card" style="border:1px solid #2383e2">
 <h2>🧠 Keputusan AI Spesialis E-commerce</h2>
 <p style="font-size:13px;color:#666;margin-bottom:12px">Analisa ala spesialis e-commerce 10 tahun pengalaman — langsung kasih keputusan & prioritas aksi dari data kamu.</p>
@@ -72,12 +80,27 @@
 <div id="charts"></div>
 </section>
 
-  <section class="card" id="analisis-card">
+  <section class="card" id="evaluasi-card">
+<h2>📆 Evaluasi Bulanan (vs Bulan Lalu)</h2>
+<p style="font-size:13px;color:#666;margin-bottom:12px">Rangkuman performa bulan ini dibanding bulan sebelumnya — otomatis dari snapshot yang kamu simpan. Makin rutin simpan snapshot, makin akurat.</p>
+<div id="evaluasi"></div>
+</section>
+<section class="card" id="forecast-card">
+<h2>🔮 Proyeksi Omset Periode Depan</h2>
+<p style="font-size:13px;color:#666;margin-bottom:12px">Prediksi arah omset berdasarkan tren snapshot kamu. Ini perkiraan dari pola data, bukan ramalan pasti — pakai buat ancang-ancang target & stok.</p>
+<div id="forecast"></div>
+</section>
+<section class="card" id="analisis-card">
     <h2>🤖 Analisis Otomatis</h2>
     <div id="analisis"></div>
   </section>
 
-  <section class="card" id="gems-card">
+  <section class="card" id="abc-card">
+<h2>📦 Analisis ABC (Pareto 80/20)</h2>
+<p style="font-size:13px;color:#666;margin-bottom:12px">Produk dikelompokin: <strong>Grup A</strong> = sedikit produk yang nyumbang ~80% omset, <strong>B</strong> ~15%, <strong>C</strong> sisanya. Prioritasin stok & iklan ke Grup A.</p>
+<div id="abc"></div>
+</section>
+<section class="card" id="gems-card">
     <h2>💎 Hidden Gems — Potensi Tersembunyi</h2>
     <p style="font-size:13px;color:#666;margin-bottom:12px">Produk yang <strong>bener-bener potensial</strong>: sinyal kuat (konversi/repeat/permintaan di papan atas) tapi omset masih kecil <strong>DAN stok masih tersedia</strong> — paling worth buat digas iklan/exposure. (Isi kolom Stok biar yang kosong otomatis disaring.)</p>
     <div id="gems"></div>
@@ -100,6 +123,16 @@
     <h2>📣 Strategi Ads & Marketing</h2>
     <p style="font-size:13px;color:#666;margin-bottom:12px">Rekomendasi strategi iklan otomatis, dikelompokin per tujuan. Tinggal eksekusi.</p>
     <div id="ads"></div>
+  </section>
+
+  <section class="card" id="promo-card">
+    <h2>🎨 Generator Konten Promo</h2>
+    <p style="font-size:13px;color:#666;margin-bottom:12px">Bikin gambar promo siap-posting dari data produkmu — carousel buat feed Instagram/Shopee & hero banner buat toko/iklan. Hasilnya langsung bisa di-download PNG.</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+      <button onclick="buatCarousel()">🖼️ Buat Carousel (Top 5)</button>
+      <button onclick="buatHero()">🏞️ Buat Hero Banner</button>
+    </div>
+    <div id="promo"><p style="color:#888;font-size:13px">Klik tombol di atas, gambar promo langsung dibuat dari produk terlarismu. Catatan: kalau foto produk dari Shopee diblokir (CORS), gambarnya tetap kebuat pakai desain warna sebagai background.</p></div>
   </section>
 
   <section class="card">
@@ -188,7 +221,9 @@ const SNAP_KEY = "snapshotMingguan";
     let produkList = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
     let iklanList = JSON.parse(localStorage.getItem(IKLAN_KEY) || "[]");
 let snapshots = JSON.parse(localStorage.getItem(SNAP_KEY) || "[]");
-let chartTren = null, chartKat = null, chartLevel = null, chartRoas = null;
+const TARGET_KEY = "targetBulanan";
+let targetBulanan = JSON.parse(localStorage.getItem(TARGET_KEY) || "0");
+let chartTren = null, chartKat = null, chartLevel = null, chartRoas = null, chartForecast = null;
     let editId = null;
     let filterAktif = "all";
     let sortBy = "skor";
@@ -577,6 +612,10 @@ if (d.catatan) ada.catatan = d.catatan;
   renderTracking();
   renderCharts();
   renderAiSpesialis();
+  renderTarget();
+  renderABC();
+  renderEvaluasi();
+  renderForecast();
     }
 
     function renderAnalisis() {
@@ -929,6 +968,328 @@ function renderAiSpesialis() {
   html += perProduk.map((x) => { const p = x.p; const v = x.v; return '<div style="display:flex;gap:10px;align-items:flex-start;padding:9px 12px;border-bottom:1px solid #f0f0f0">' + (p.foto ? '<img src="' + p.foto + '" style="width:38px;height:38px;object-fit:cover;border-radius:6px;flex-shrink:0" onerror="this.style.display=\'none\'">' : '') + '<div style="flex:1;min-width:0"><div style="margin-bottom:2px"><span style="font-size:10px;font-weight:700;color:#fff;background:' + v.warna + ';padding:2px 8px;border-radius:20px">' + v.lbl + '</span> <strong style="font-size:13px">' + (p.linkShopee ? '<a href="' + p.linkShopee + '" target="_blank" rel="noopener" style="color:#2383e2;text-decoration:none">' + p.nama + ' ↗</a>' : p.nama) + '</strong> <span style="font-size:11px;color:#999">· ' + formatRupiah(p.omset || 0) + (p.stok != null ? ' · stok ' + p.stok : '') + '</span></div><div style="font-size:12px;color:#555">' + v.aksi + '</div></div></div>'; }).join('');
   html += '</div>';
   el.innerHTML = html;
+}
+function simpanTarget() {
+const v = parseFloat(document.getElementById("inputTarget").value);
+targetBulanan = isNaN(v) ? 0 : v;
+localStorage.setItem(TARGET_KEY, JSON.stringify(targetBulanan));
+renderTarget();
+}
+function renderTarget() {
+const el = document.getElementById("target");
+if (!el) return;
+const inp = document.getElementById("inputTarget");
+if (inp && targetBulanan > 0 && document.activeElement !== inp && inp.value === "") inp.value = targetBulanan;
+const totalOmset = produkList.reduce((s, p) => s + (p.omset || 0), 0);
+if (!targetBulanan || targetBulanan <= 0) { el.innerHTML = '<p style="color:#999">Belum ada target. Isi target omset bulan ini di atas, nanti progress bar + perkiraan setoran harian muncul di sini.</p>'; return; }
+const persen = (totalOmset / targetBulanan) * 100;
+const persenBar = Math.min(100, persen);
+const now = new Date();
+const totalHari = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+const hariIni = now.getDate();
+const sisaHari = Math.max(0, totalHari - hariIni);
+const sisaTarget = Math.max(0, targetBulanan - totalOmset);
+const perHari = sisaHari > 0 ? sisaTarget / sisaHari : sisaTarget;
+const idealPersen = (hariIni / totalHari) * 100;
+const tercapai = persen >= 100;
+const onTrack = persen >= idealPersen;
+const warna = tercapai ? "#1a7f37" : onTrack ? "#1a7f37" : persen >= idealPersen * 0.7 ? "#d97706" : "#c1271e";
+const namaBulan = now.toLocaleDateString("id-ID", { month: "long", year: "numeric" });
+let status;
+if (tercapai) status = "Target bulan ini TERCAPAI. Mantap - dorong terus biar lewat dari target.";
+else if (onTrack) status = "On track. Pertahankan ritme, posisi kamu di depan jadwal ideal.";
+else status = "Agak ketinggalan dari jadwal ideal (" + idealPersen.toFixed(0) + "%). Perlu digas biar nyusul target.";
+let html = '';
+html += '<div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:6px;font-size:13px"><span><strong>' + namaBulan + '</strong></span><span style="font-weight:700;color:' + warna + '">' + persen.toFixed(1) + '%</span></div>';
+html += '<div style="background:#e3e8ef;border-radius:20px;height:22px;overflow:hidden;position:relative;margin-bottom:4px"><div style="width:' + persenBar + '%;height:100%;background:' + warna + ';border-radius:20px"></div><div style="position:absolute;left:' + Math.min(100, idealPersen) + '%;top:0;height:100%;border-left:2px dashed #555"></div></div>';
+html += '<div style="font-size:11px;color:#888;margin-bottom:14px">Garis putus-putus = posisi ideal hari ini (' + idealPersen.toFixed(0) + '%)</div>';
+html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px">';
+html += '<div class="stat-box"><div class="lbl">Tercapai</div><div class="num" style="font-size:18px">' + formatRupiah(totalOmset) + '</div><div class="sub">dari target ' + formatRupiah(targetBulanan) + '</div></div>';
+html += '<div class="stat-box"><div class="lbl">Sisa Target</div><div class="num" style="font-size:18px">' + formatRupiah(sisaTarget) + '</div><div class="sub">' + sisaHari + ' hari tersisa</div></div>';
+html += '<div class="stat-box"><div class="lbl">Butuh per Hari</div><div class="num" style="font-size:18px">' + formatRupiah(Math.round(perHari)) + '</div><div class="sub">biar target kekejar</div></div>';
+html += '</div>';
+html += '<div style="background:#fff;border-left:4px solid ' + warna + ';padding:9px 13px;margin-top:14px;font-size:13px;border-radius:0 6px 6px 0">' + status + '</div>';
+el.innerHTML = html;
+}
+function renderABC() {
+const el = document.getElementById("abc");
+if (!el) return;
+const adaOmset = produkList.filter((p) => (p.omset || 0) > 0);
+if (adaOmset.length < 2) { el.innerHTML = '<p style="color:#999">Butuh minimal 2 produk yang ada omsetnya buat analisis ABC. Import data penjualan dulu.</p>'; return; }
+const sorted = adaOmset.slice().sort((a, b) => (b.omset || 0) - (a.omset || 0));
+const total = sorted.reduce((s, p) => s + (p.omset || 0), 0);
+let kum = 0;
+const rows = sorted.map((p, i) => {
+const sebelumPct = (kum / total) * 100;
+kum += (p.omset || 0);
+const kumPct = (kum / total) * 100;
+const kontrib = (p.omset || 0) / total * 100;
+let grup;
+if (sebelumPct < 80) grup = "A"; else if (sebelumPct < 95) grup = "B"; else grup = "C";
+return { p: p, rank: i + 1, kontrib: kontrib, kumPct: kumPct, grup: grup };
+});
+const grupData = { A: [], B: [], C: [] };
+rows.forEach((r) => grupData[r.grup].push(r));
+const sumGrup = (g) => grupData[g].reduce((s, r) => s + (r.p.omset || 0), 0);
+const meta = { A: { warna: "#1a7f37", bg: "#eafaf0", ket: "Tulang punggung omset - prioritas nomor 1 buat stok & iklan, jangan sampai kosong." }, B: { warna: "#9a6700", bg: "#fffbeb", ket: "Pendukung - jaga ketersediaan, cari peluang naikin ke grup A." }, C: { warna: "#888", bg: "#f4f5f7", ket: "Ekor panjang - kontribusi kecil. Efisienkan stok/biaya, kandidat evaluasi." } };
+let html = '<div class="grid" style="margin-bottom:18px">';
+["A", "B", "C"].forEach((g) => {
+const cnt = grupData[g].length;
+const pProd = (cnt / rows.length) * 100;
+const pOmz = total > 0 ? (sumGrup(g) / total) * 100 : 0;
+html += '<div style="border-top:4px solid ' + meta[g].warna + ';background:' + meta[g].bg + ';border-radius:8px;padding:14px"><div style="font-size:20px;font-weight:800;color:' + meta[g].warna + '">Grup ' + g + '</div><div style="font-size:13px;margin:4px 0"><strong>' + cnt + ' produk</strong> (' + pProd.toFixed(0) + '% dari SKU)</div><div style="font-size:13px">Nyumbang <strong>' + pOmz.toFixed(0) + '%</strong> omset (' + formatRupiah(sumGrup(g)) + ')</div><div style="font-size:11px;color:#666;margin-top:6px">' + meta[g].ket + '</div></div>';
+});
+html += '</div>';
+const cA = grupData.A.length;
+html += '<p style="font-size:13px;color:#444;margin-bottom:10px"><strong>Inti Pareto:</strong> ' + cA + ' produk (' + ((cA / rows.length) * 100).toFixed(0) + '% dari total) nyetir ~80% omset toko. Fokusin energi, stok, & budget iklan ke sini.</p>';
+html += '<h3 style="font-size:14px;margin:8px 0 8px">Produk Grup A - Prioritas Utama</h3>';
+html += '<div style="max-height:360px;overflow-y:auto;border:1px solid #eee;border-radius:8px"><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr><th style="text-align:left;padding:8px;border-bottom:1px solid #eee">#</th><th style="text-align:left;padding:8px;border-bottom:1px solid #eee">Produk</th><th style="text-align:right;padding:8px;border-bottom:1px solid #eee">Omset</th><th style="text-align:right;padding:8px;border-bottom:1px solid #eee">Kontribusi</th><th style="text-align:right;padding:8px;border-bottom:1px solid #eee">Kumulatif</th></tr></thead><tbody>';
+html += grupData.A.map((r) => { const p = r.p; return '<tr><td style="padding:8px;border-bottom:1px solid #f3f3f3">' + r.rank + '</td><td style="padding:8px;border-bottom:1px solid #f3f3f3">' + (p.linkShopee ? '<a href="' + p.linkShopee + '" target="_blank" rel="noopener" style="color:#2383e2;text-decoration:none">' + p.nama + ' ↗</a>' : p.nama) + '</td><td style="padding:8px;border-bottom:1px solid #f3f3f3;text-align:right">' + formatRupiah(p.omset || 0) + '</td><td style="padding:8px;border-bottom:1px solid #f3f3f3;text-align:right;font-weight:600">' + r.kontrib.toFixed(1) + '%</td><td style="padding:8px;border-bottom:1px solid #f3f3f3;text-align:right;color:#888">' + r.kumPct.toFixed(0) + '%</td></tr>'; }).join('');
+html += '</tbody></table></div>';
+el.innerHTML = html;
+}
+function bulanKey(ts) { const d = new Date(ts); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0"); }
+function namaBulanDari(key) { return new Date(key + "-01T00:00:00").toLocaleDateString("id-ID", { month: "long", year: "numeric" }); }
+function renderEvaluasi() {
+const el = document.getElementById("evaluasi");
+if (!el) return;
+const bulanan = {};
+snapshots.forEach((s) => { const k = bulanKey(s.ts); bulanan[k] = { key: k, totalOmset: s.totalOmset, totalPesanan: s.totalPesanan, produk: s.produk || {} }; });
+const now = new Date();
+const kNow = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0");
+const totalOmset = produkList.reduce((s, p) => s + (p.omset || 0), 0);
+const totalPesanan = produkList.reduce((s, p) => s + (p.pesanan || 0), 0);
+const produkNow = {};
+produkList.forEach((p) => { produkNow[normNama(p.nama)] = { nama: p.nama, omset: p.omset || 0, pesanan: p.pesanan || 0 }; });
+bulanan[kNow] = { key: kNow, totalOmset: totalOmset, totalPesanan: totalPesanan, produk: produkNow };
+const keys = Object.keys(bulanan).sort();
+if (keys.length < 2) { el.innerHTML = '<p style="color:#999">Belum cukup data buat bandingin antar bulan. Sekarang baru ada data bulan <strong>' + namaBulanDari(keys[0] || kNow) + '</strong>. Simpan snapshot rutin (panel Tren Antar-Minggu), nanti pas masuk bulan baru perbandingannya muncul otomatis di sini.</p>'; return; }
+const curr = bulanan[keys[keys.length - 1]];
+const prev = bulanan[keys[keys.length - 2]];
+const dOmset = prev.totalOmset > 0 ? ((curr.totalOmset - prev.totalOmset) / prev.totalOmset) * 100 : (curr.totalOmset > 0 ? 100 : 0);
+const dPesanan = prev.totalPesanan > 0 ? ((curr.totalPesanan - prev.totalPesanan) / prev.totalPesanan) * 100 : (curr.totalPesanan > 0 ? 100 : 0);
+const warnaD = (d) => d > 1 ? "#1a7f37" : d < -1 ? "#c1271e" : "#888";
+const ikonD = (d) => d > 1 ? "▲" : d < -1 ? "▼" : "▬";
+const fmtD = (d) => (d >= 0 ? "+" : "") + d.toFixed(0) + "%";
+const naik = [], turun = [], baru = [], hilang = [];
+Object.keys(curr.produk).forEach((k) => { const c = curr.produk[k]; const pv = prev.produk[k]; if (!pv) { if ((c.omset || 0) > 0) baru.push(c); return; } const sel = (c.omset || 0) - (pv.omset || 0); if (sel > 0) naik.push({ nama: c.nama, sel: sel }); else if (sel < 0) turun.push({ nama: c.nama, sel: sel }); });
+Object.keys(prev.produk).forEach((k) => { if (!curr.produk[k] && (prev.produk[k].omset || 0) > 0) hilang.push(prev.produk[k]); });
+naik.sort((a, b) => b.sel - a.sel); turun.sort((a, b) => a.sel - b.sel);
+let html = '';
+html += '<div style="font-size:13px;color:#666;margin-bottom:10px"><strong>' + namaBulanDari(curr.key) + '</strong> dibanding <strong>' + namaBulanDari(prev.key) + '</strong></div>';
+html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:16px">';
+html += '<div class="stat-box"><div class="lbl">Omset bulan ini</div><div class="num" style="font-size:20px">' + formatRupiah(curr.totalOmset) + '</div><div class="sub" style="color:' + warnaD(dOmset) + '">' + ikonD(dOmset) + ' ' + fmtD(dOmset) + ' (lalu ' + formatRupiah(prev.totalOmset) + ')</div></div>';
+html += '<div class="stat-box"><div class="lbl">Pesanan bulan ini</div><div class="num" style="font-size:20px">' + curr.totalPesanan.toLocaleString("id-ID") + '</div><div class="sub" style="color:' + warnaD(dPesanan) + '">' + ikonD(dPesanan) + ' ' + fmtD(dPesanan) + ' (lalu ' + prev.totalPesanan.toLocaleString("id-ID") + ')</div></div>';
+const selisihRp = curr.totalOmset - prev.totalOmset;
+html += '<div class="stat-box"><div class="lbl">Selisih Omset</div><div class="num" style="font-size:20px;color:' + warnaD(dOmset) + '">' + (selisihRp >= 0 ? "+" : "-") + formatRupiah(Math.abs(selisihRp)) + '</div><div class="sub">vs bulan lalu</div></div>';
+html += '</div>';
+let vonis;
+if (dOmset > 10) vonis = "Bulan ini tumbuh sehat (" + fmtD(dOmset) + "). Pertahankan yang lagi jalan & amanin stok produk juara.";
+else if (dOmset > 1) vonis = "Ada pertumbuhan tipis (" + fmtD(dOmset) + "). Cari 1-2 pengungkit (scale produk juara / gas hidden gems) biar lebih ngegas.";
+else if (dOmset >= -1) vonis = "Omset relatif datar. Waktunya dorong: scale produk untung & benahi listing CVR rendah.";
+else vonis = "Omset turun (" + fmtD(dOmset) + "). Cek produk yang anjlok & campaign boncos, tangani sebelum melebar.";
+html += '<div style="background:#fff;border-left:4px solid ' + warnaD(dOmset) + ';padding:10px 14px;margin-bottom:16px;font-size:13px;line-height:1.6">' + vonis + '</div>';
+const kolom = (judul, arr, warna, render) => { if (arr.length === 0) return '<div style="flex:1;min-width:200px"><strong style="color:' + warna + '">' + judul + '</strong><p style="font-size:12px;color:#999;margin-top:4px">- nggak ada -</p></div>'; return '<div style="flex:1;min-width:200px"><strong style="color:' + warna + '">' + judul + '</strong><ul style="margin:4px 0 0 18px;font-size:12px;line-height:1.7">' + arr.slice(0, 5).map(render).join('') + '</ul></div>'; };
+html += '<div style="display:flex;gap:16px;flex-wrap:wrap">';
+html += kolom("Naik Daun", naik, "#1a7f37", (x) => '<li>' + x.nama + ' <span style="color:#1a7f37">(+' + formatRupiah(x.sel) + ')</span></li>');
+html += kolom("Melemah", turun, "#c1271e", (x) => '<li>' + x.nama + ' <span style="color:#c1271e">(-' + formatRupiah(Math.abs(x.sel)) + ')</span></li>');
+html += '</div>';
+if (baru.length > 0 || hilang.length > 0) { html += '<div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:14px">'; html += kolom("Pemain Baru", baru, "#2383e2", (x) => '<li>' + x.nama + ' <span style="color:#888">(' + formatRupiah(x.omset || 0) + ')</span></li>'); html += kolom("Berhenti Jualan", hilang, "#9a6700", (x) => '<li>' + x.nama + ' <span style="color:#888">(dulu ' + formatRupiah(x.omset || 0) + ')</span></li>'); html += '</div>'; }
+el.innerHTML = html;
+}
+function renderForecast() {
+const el = document.getElementById("forecast");
+if (!el) return;
+const totalOmset = produkList.reduce((s, p) => s + (p.omset || 0), 0);
+const pts = snapshots.map((s) => s.totalOmset);
+const labels = snapshots.map((s) => s.tanggal);
+pts.push(totalOmset); labels.push("Sekarang");
+if (pts.length < 3) { el.innerHTML = '<p style="color:#999">Butuh minimal 3 titik data buat proyeksi yang masuk akal. Simpan snapshot rutin di panel Tren Antar-Minggu - sekarang baru ada ' + pts.length + ' titik. Begitu cukup, proyeksi omset periode depan + grafiknya muncul otomatis di sini.</p>'; return; }
+const n = pts.length;
+let sx = 0, sy = 0, sxy = 0, sxx = 0;
+for (let i = 0; i < n; i++) { sx += i; sy += pts[i]; sxy += i * pts[i]; sxx += i * i; }
+const b = (n * sxy - sx * sy) / (n * sxx - sx * sx);
+const a = (sy - b * sx) / n;
+const proyeksi = Math.max(0, a + b * n);
+const terakhir = pts[n - 1];
+const deltaProy = terakhir > 0 ? ((proyeksi - terakhir) / terakhir) * 100 : 0;
+const meanY = sy / n;
+let ssTot = 0, ssRes = 0;
+for (let i = 0; i < n; i++) { const pred = a + b * i; ssRes += Math.pow(pts[i] - pred, 2); ssTot += Math.pow(pts[i] - meanY, 2); }
+const r2 = ssTot > 0 ? Math.max(0, 1 - ssRes / ssTot) : 0;
+let keyakinan, kWarna;
+if (r2 >= 0.7) { keyakinan = "Tinggi"; kWarna = "#1a7f37"; } else if (r2 >= 0.4) { keyakinan = "Sedang"; kWarna = "#9a6700"; } else { keyakinan = "Rendah"; kWarna = "#c1271e"; }
+const arahWarna = b > 0 ? "#1a7f37" : b < 0 ? "#c1271e" : "#888";
+const arahTxt = b > 0 ? "tren naik" : b < 0 ? "tren turun" : "tren datar";
+let html = '';
+html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:16px">';
+html += '<div class="stat-box"><div class="lbl">Omset terakhir</div><div class="num" style="font-size:19px">' + formatRupiah(terakhir) + '</div></div>';
+html += '<div class="stat-box"><div class="lbl">Proyeksi periode depan</div><div class="num" style="font-size:19px;color:' + arahWarna + '">' + formatRupiah(Math.round(proyeksi)) + '</div><div class="sub" style="color:' + arahWarna + '">' + (deltaProy >= 0 ? "+" : "") + deltaProy.toFixed(0) + '% · ' + arahTxt + '</div></div>';
+html += '<div class="stat-box"><div class="lbl">Keyakinan Proyeksi</div><div class="num" style="font-size:19px;color:' + kWarna + '">' + keyakinan + '</div><div class="sub">konsistensi tren ' + (r2 * 100).toFixed(0) + '%</div></div>';
+html += '</div>';
+let saran;
+if (keyakinan === "Rendah") saran = "Data masih naik-turun, jadi proyeksi ini kasar. Anggap ancang-ancang aja, jangan patokan keras. Makin rutin snapshot, makin akurat.";
+else if (b > 0) saran = "Tren positif. Kalau ritme dijaga, omset periode depan diperkirakan sekitar " + formatRupiah(Math.round(proyeksi)) + ". Siapin stok produk juara biar nggak kehabisan pas momentum naik.";
+else if (b < 0) saran = "Tren menurun. Tanpa aksi, periode depan bisa turun ke sekitar " + formatRupiah(Math.round(proyeksi)) + ". Benahi campaign boncos & listing lemah, gas hidden gems buat balikin arah.";
+else saran = "Tren datar. Perlu pengungkit baru (scale produk untung / hidden gems) biar grafiknya naik.";
+html += '<div style="background:#fff;border-left:4px solid ' + arahWarna + ';padding:10px 14px;margin-bottom:16px;font-size:13px;line-height:1.6">' + saran + '</div>';
+html += '<canvas id="chart-forecast" height="120"></canvas>';
+el.innerHTML = html;
+if (window.Chart) { const allLabels = labels.concat(["Proyeksi"]); const aktual = pts.concat([null]); const proy = []; for (let i = 0; i < n; i++) proy.push(i === n - 1 ? pts[i] : null); proy.push(Math.round(proyeksi)); if (chartForecast) chartForecast.destroy(); chartForecast = new Chart(document.getElementById("chart-forecast"), { type: "line", data: { labels: allLabels, datasets: [{ label: "Aktual", data: aktual, borderColor: "#2383e2", backgroundColor: "rgba(35,131,226,0.12)", fill: true, tension: 0.3 }, { label: "Proyeksi", data: proy, borderColor: arahWarna, borderDash: [6, 6], pointStyle: "rectRot", pointRadius: 5, fill: false, tension: 0 }] }, options: { plugins: { legend: { display: true, position: "bottom" } }, scales: { y: { ticks: { callback: (v) => formatRupiah(v) } } } } }); }
+}
+function formatRupiahFull(n) { return "Rp " + (n || 0).toLocaleString("id-ID"); }
+function wrapText(ctx, text, x, y, maxW, lh, maxLines) {
+const words = String(text || "").split(" ");
+let line = "", lines = [];
+for (const wd of words) { const test = line ? line + " " + wd : wd; if (ctx.measureText(test).width > maxW && line) { lines.push(line); line = wd; } else { line = test; } }
+if (line) lines.push(line);
+if (maxLines && lines.length > maxLines) { lines = lines.slice(0, maxLines); lines[maxLines - 1] = lines[maxLines - 1] + "…"; }
+lines.forEach((ln, i) => ctx.fillText(ln, x, y + i * lh));
+return y + lines.length * lh;
+}
+function drawImageCover(ctx, img, x, y, w, h) {
+const ir = img.width / img.height, r = w / h;
+let sw, sh, sx, sy;
+if (ir > r) { sh = img.height; sw = sh * r; sx = (img.width - sw) / 2; sy = 0; } else { sw = img.width; sh = sw / r; sx = 0; sy = (img.height - sh) / 2; }
+ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
+}
+function muatGambar(url) { return new Promise((resolve) => { if (!url) { resolve(null); return; } const img = new Image(); img.crossOrigin = "anonymous"; img.onload = () => resolve(img); img.onerror = () => resolve(null); img.src = url; }); }
+function unduhCanvas(canvas, nama) { canvas.toBlob((blob) => { const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = nama; document.body.appendChild(a); a.click(); document.body.removeChild(a); setTimeout(() => URL.revokeObjectURL(a.href), 1500); }); }
+function topProdukPromo(maxN) { return produkList.slice().filter((p) => (p.omset || 0) > 0 || (p.pesanan || 0) > 0).sort((a, b) => (b.omset || 0) - (a.omset || 0)).slice(0, maxN); }
+function gambarKartuTeks(ctx, s) {
+const w = 1080, h = 1080;
+const grad = ctx.createLinearGradient(0, 0, w, h);
+grad.addColorStop(0, "#1e3a8a"); grad.addColorStop(1, "#2383e2");
+ctx.fillStyle = grad; ctx.fillRect(0, 0, w, h);
+ctx.fillStyle = "rgba(255,255,255,0.08)"; ctx.beginPath(); ctx.arc(w - 140, 160, 300, 0, Math.PI * 2); ctx.fill();
+ctx.fillStyle = "#ffd166"; ctx.fillRect(100, 420, 110, 14);
+ctx.fillStyle = "#ffffff"; ctx.textAlign = "left"; ctx.textBaseline = "alphabetic"; ctx.font = "800 92px system-ui, sans-serif";
+const afterJ = wrapText(ctx, s.judul, 100, 560, 880, 100, 3);
+ctx.fillStyle = "rgba(255,255,255,0.85)"; ctx.font = "400 44px system-ui, sans-serif";
+wrapText(ctx, s.sub, 100, afterJ + 40, 860, 56, 3);
+ctx.fillStyle = "rgba(255,255,255,0.7)"; ctx.font = "600 32px system-ui, sans-serif";
+ctx.fillText(s.tipe === "cover" ? "Geser ➜" : "Cek toko kami", 100, 1000);
+}
+function gambarKartuProduk(ctx, s, img) {
+const w = 1080, h = 1080, p = s.p, imgH = 620;
+ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, w, h);
+if (img) { drawImageCover(ctx, img, 0, 0, w, imgH); } else {
+const grad = ctx.createLinearGradient(0, 0, w, imgH);
+grad.addColorStop(0, "#2383e2"); grad.addColorStop(1, "#1e3a8a");
+ctx.fillStyle = grad; ctx.fillRect(0, 0, w, imgH);
+ctx.fillStyle = "rgba(255,255,255,0.9)"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.font = "800 220px system-ui, sans-serif";
+ctx.fillText((p.nama || "?").charAt(0).toUpperCase(), w / 2, imgH / 2);
+ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+}
+ctx.fillStyle = "#ffd166"; ctx.beginPath(); ctx.arc(120, 120, 80, 0, Math.PI * 2); ctx.fill();
+ctx.fillStyle = "#1e3a8a"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.font = "800 66px system-ui, sans-serif";
+ctx.fillText("#" + s.rank, 120, 126);
+ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+ctx.fillStyle = "#ffffff"; ctx.fillRect(0, imgH, w, h - imgH);
+ctx.fillStyle = "#1a1a1a"; ctx.font = "800 56px system-ui, sans-serif";
+const afterNama = wrapText(ctx, p.nama || "Produk", 70, imgH + 90, 940, 64, 2);
+ctx.fillStyle = "#2383e2"; ctx.font = "800 66px system-ui, sans-serif";
+const hargaTxt = (p.hargaJual || 0) > 0 ? formatRupiahFull(p.hargaJual) : formatRupiah(p.omset || 0) + " omset";
+ctx.fillText(hargaTxt, 70, afterNama + 70);
+ctx.fillStyle = "#666666"; ctx.font = "400 34px system-ui, sans-serif";
+ctx.fillText("Terjual " + (p.pesanan || 0).toLocaleString("id-ID") + " pesanan", 70, afterNama + 140);
+}
+function gambarHero(ctx, p, img) {
+const w = 1200, h = 630;
+const grad = ctx.createLinearGradient(0, 0, w, h);
+grad.addColorStop(0, "#1e3a8a"); grad.addColorStop(1, "#2383e2");
+ctx.fillStyle = grad; ctx.fillRect(0, 0, w, h);
+const panelX = 720, panelW = w - panelX;
+if (img) { drawImageCover(ctx, img, panelX, 0, panelW, h); } else {
+ctx.fillStyle = "rgba(255,255,255,0.12)"; ctx.fillRect(panelX, 0, panelW, h);
+ctx.fillStyle = "rgba(255,255,255,0.85)"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.font = "800 160px system-ui, sans-serif";
+ctx.fillText((p.nama || "?").charAt(0).toUpperCase(), panelX + panelW / 2, h / 2);
+ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+}
+const fade = ctx.createLinearGradient(panelX - 140, 0, panelX + 80, 0);
+fade.addColorStop(0, "rgba(30,58,138,1)"); fade.addColorStop(1, "rgba(30,58,138,0)");
+ctx.fillStyle = fade; ctx.fillRect(panelX - 140, 0, 220, h);
+ctx.fillStyle = "#ffd166"; ctx.fillRect(80, 72, 90, 8);
+ctx.fillStyle = "#ffffff"; ctx.textBaseline = "alphabetic"; ctx.font = "800 36px system-ui, sans-serif";
+ctx.fillText("PRODUK UNGGULAN", 80, 120);
+ctx.font = "800 60px system-ui, sans-serif";
+const afterNama = wrapText(ctx, p.nama || "Produk", 80, 200, 580, 68, 3);
+ctx.fillStyle = "#ffd166"; ctx.font = "800 58px system-ui, sans-serif";
+const hargaTxt = (p.hargaJual || 0) > 0 ? formatRupiahFull(p.hargaJual) : formatRupiah(p.omset || 0) + " omset";
+ctx.fillText(hargaTxt, 80, afterNama + 60);
+ctx.fillStyle = "rgba(255,255,255,0.85)"; ctx.font = "400 30px system-ui, sans-serif";
+ctx.fillText("Terjual " + (p.pesanan || 0).toLocaleString("id-ID") + " · Stok " + (p.stok == null ? "-" : p.stok), 80, afterNama + 115);
+ctx.fillStyle = "#ffd166"; ctx.fillRect(80, h - 130, 320, 72);
+ctx.fillStyle = "#1e3a8a"; ctx.textBaseline = "middle"; ctx.font = "700 32px system-ui, sans-serif";
+ctx.fillText("ORDER SEKARANG", 112, h - 94);
+ctx.textBaseline = "alphabetic";
+}
+async function buatCarousel() {
+const el = document.getElementById("promo");
+const tops = topProdukPromo(5);
+if (tops.length === 0) { alert("Belum ada produk dengan penjualan buat dijadiin carousel. Import/isi data omset dulu."); return; }
+el.dataset.generated = "1";
+el.innerHTML = '<p style="color:#888;font-size:13px">Lagi bikin carousel... bentar ya.</p>';
+const slides = [{ tipe: "cover", judul: "PRODUK TERLARIS", sub: "Pilihan terbaik buat kamu" }];
+tops.forEach((p, i) => slides.push({ tipe: "produk", p: p, rank: i + 1 }));
+slides.push({ tipe: "cta", judul: "ORDER SEKARANG", sub: "Stok terbatas, jangan sampai kehabisan ya" });
+const canvases = [];
+for (let i = 0; i < slides.length; i++) {
+const s = slides[i];
+const canvas = document.createElement("canvas");
+canvas.width = 1080; canvas.height = 1080;
+const ctx = canvas.getContext("2d");
+if (s.tipe === "produk") { const img = await muatGambar(s.p.foto); gambarKartuProduk(ctx, s, img); } else { gambarKartuTeks(ctx, s); }
+canvases.push(canvas);
+}
+el.innerHTML = "";
+const info = document.createElement("p");
+info.style.cssText = "font-size:13px;color:#555;margin-bottom:10px";
+info.innerHTML = "<strong>" + slides.length + " slide</strong> siap (1080×1080, pas buat IG/Shopee). Geser buat lihat semua, klik tombol di bawah tiap slide buat download.";
+el.appendChild(info);
+const allBtn = document.createElement("button");
+allBtn.textContent = "⬇️ Download Semua Slide";
+allBtn.style.cssText = "margin-bottom:14px";
+allBtn.onclick = () => canvases.forEach((c, idx) => setTimeout(() => unduhCanvas(c, "carousel-" + (idx + 1) + ".png"), idx * 500));
+el.appendChild(allBtn);
+const wrap = document.createElement("div");
+wrap.style.cssText = "display:flex;gap:14px;overflow-x:auto;padding-bottom:10px";
+canvases.forEach((c, idx) => {
+c.style.cssText = "width:240px;height:240px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.15);flex-shrink:0";
+const cell = document.createElement("div");
+cell.style.cssText = "flex-shrink:0;text-align:center";
+cell.appendChild(c);
+const btn = document.createElement("button");
+btn.className = "ghost"; btn.textContent = "⬇️ Slide " + (idx + 1);
+btn.style.cssText = "display:block;margin:6px auto 0;font-size:12px";
+btn.onclick = () => unduhCanvas(c, "carousel-" + (idx + 1) + ".png");
+cell.appendChild(btn);
+wrap.appendChild(cell);
+});
+el.appendChild(wrap);
+}
+async function buatHero() {
+const el = document.getElementById("promo");
+const tops = topProdukPromo(1);
+if (tops.length === 0) { alert("Belum ada produk buat dijadiin hero banner. Import/isi data omset dulu."); return; }
+el.dataset.generated = "1";
+el.innerHTML = '<p style="color:#888;font-size:13px">Lagi bikin hero banner...</p>';
+const p = tops[0];
+const img = await muatGambar(p.foto);
+const canvas = document.createElement("canvas");
+canvas.width = 1200; canvas.height = 630;
+gambarHero(canvas.getContext("2d"), p, img);
+el.innerHTML = "";
+const info = document.createElement("p");
+info.style.cssText = "font-size:13px;color:#555;margin-bottom:10px";
+info.innerHTML = "Hero banner siap (1200×630, pas buat banner toko / cover / iklan). Produk: <strong>" + p.nama + "</strong>.";
+el.appendChild(info);
+canvas.style.cssText = "width:100%;max-width:600px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.15);display:block;margin-bottom:10px";
+el.appendChild(canvas);
+const btn = document.createElement("button");
+btn.textContent = "⬇️ Download Hero Banner";
+btn.onclick = () => unduhCanvas(canvas, "hero-banner.png");
+el.appendChild(btn);
 }
 function renderStrategiAds() {
       const el = document.getElementById('ads');
