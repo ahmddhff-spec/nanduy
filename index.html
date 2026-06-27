@@ -125,7 +125,27 @@
     <div id="ads"></div>
   </section>
 
-  <section class="card" id="promo-card">
+  <section class="card" id="studio-card">
+<h2>🎨 Studio Konten</h2>
+<p style="font-size:13px;color:#666;margin-bottom:12px">Pilih tema warna brand kamu, terus generate template polos (background kosong) buat dipakai di Canva/IG — atau tema ini langsung kepakai juga di Carousel & Hero Banner di bawah.</p>
+<div style="font-size:12px;color:#888;margin-bottom:6px">Tema warna:</div>
+<div id="studio-tema" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px"></div>
+<div style="font-size:12px;color:#888;margin-bottom:6px">Template polos (background referensi):</div>
+<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+<button class="ghost" onclick="buatPolos('post')">⬜ Post 1080×1080</button>
+<button class="ghost" onclick="buatPolos('story')">📱 Story 1080×1920</button>
+<button class="ghost" onclick="buatPolos('banner')">🖥️ Banner 1200×630</button>
+</div>
+<div style="font-size:12px;color:#888;margin-bottom:6px">Background kustom kamu (dipakai di Carousel & Hero):</div>
+<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
+<button class="ghost" onclick="document.getElementById('file-bg').click()">🖼️ Upload Background</button>
+<button class="ghost" onclick="hapusBgKustom()">Hapus Background</button>
+<input type="file" id="file-bg" accept="image/*" hidden onchange="uploadBg(event)" />
+</div>
+<div id="studio-bg-status"></div>
+<div id="studio-preview"></div>
+</section>
+<section class="card" id="promo-card">
     <h2>🎨 Generator Konten Promo</h2>
     <p style="font-size:13px;color:#666;margin-bottom:12px">Bikin gambar promo siap-posting dari data produkmu — carousel buat feed Instagram/Shopee & hero banner buat toko/iklan. Hasilnya langsung bisa di-download PNG.</p>
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
@@ -616,6 +636,7 @@ if (d.catatan) ada.catatan = d.catatan;
   renderABC();
   renderEvaluasi();
   renderForecast();
+renderStudio();
     }
 
     function renderAnalisis() {
@@ -1137,6 +1158,20 @@ html += '<canvas id="chart-forecast" height="120"></canvas>';
 el.innerHTML = html;
 if (window.Chart) { const allLabels = labels.concat(["Proyeksi"]); const aktual = pts.concat([null]); const proy = []; for (let i = 0; i < n; i++) proy.push(i === n - 1 ? pts[i] : null); proy.push(Math.round(proyeksi)); if (chartForecast) chartForecast.destroy(); chartForecast = new Chart(document.getElementById("chart-forecast"), { type: "line", data: { labels: allLabels, datasets: [{ label: "Aktual", data: aktual, borderColor: "#2383e2", backgroundColor: "rgba(35,131,226,0.12)", fill: true, tension: 0.3 }, { label: "Proyeksi", data: proy, borderColor: arahWarna, borderDash: [6, 6], pointStyle: "rectRot", pointRadius: 5, fill: false, tension: 0 }] }, options: { plugins: { legend: { display: true, position: "bottom" } }, scales: { y: { ticks: { callback: (v) => formatRupiah(v) } } } } }); }
 }
+function hexRgba(hex, a) { const h = hex.replace("#", ""); const n = parseInt(h.length === 3 ? h.split("").map((c) => c + c).join("") : h, 16); return "rgba(" + ((n >> 16) & 255) + "," + ((n >> 8) & 255) + "," + (n & 255) + "," + a + ")"; }
+const TEMA_PROMO = { biru: { nama: "Biru Korporat", c1: "#1e3a8a", c2: "#2383e2", aksen: "#ffd166" }, hitam: { nama: "Hitam Elegan", c1: "#18181b", c2: "#3f3f46", aksen: "#f5c518" }, ungu: { nama: "Ungu Modern", c1: "#4c1d95", c2: "#8b5cf6", aksen: "#fbbf24" }, hijau: { nama: "Hijau Segar", c1: "#065f46", c2: "#10b981", aksen: "#fde047" }, merah: { nama: "Merah Berani", c1: "#7f1d1d", c2: "#ef4444", aksen: "#fde68a" }, sunset: { nama: "Sunset", c1: "#9a3412", c2: "#f97316", aksen: "#fff3b0" } };
+let temaPromo = localStorage.getItem("temaPromo") || "biru";
+function temaSekarang() { return TEMA_PROMO[temaPromo] || TEMA_PROMO.biru; }
+function pilihTema(k) { temaPromo = k; localStorage.setItem("temaPromo", k); renderStudio(); }
+let bgKustomData = localStorage.getItem("bgKustom") || null;
+let bgImg = null;
+function pakaiBgKustom(ctx, w, h) { if (!bgImg) return false; drawImageCover(ctx, bgImg, 0, 0, w, h); const sc = ctx.createLinearGradient(0, 0, 0, h); sc.addColorStop(0, "rgba(0,0,0,0.25)"); sc.addColorStop(1, "rgba(0,0,0,0.6)"); ctx.fillStyle = sc; ctx.fillRect(0, 0, w, h); return true; }
+function loadBgImg(cb) { if (!bgKustomData) { bgImg = null; if (cb) cb(); return; } const im = new Image(); im.onload = () => { bgImg = im; if (cb) cb(); }; im.onerror = () => { bgImg = null; if (cb) cb(); }; im.src = bgKustomData; }
+function uploadBg(e) { const file = e.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = (ev) => { const tmp = new Image(); tmp.onload = () => { const maxD = 1600; let w = tmp.width, h = tmp.height; if (Math.max(w, h) > maxD) { const r = maxD / Math.max(w, h); w = Math.round(w * r); h = Math.round(h * r); } const c = document.createElement("canvas"); c.width = w; c.height = h; c.getContext("2d").drawImage(tmp, 0, 0, w, h); try { bgKustomData = c.toDataURL("image/jpeg", 0.85); localStorage.setItem("bgKustom", bgKustomData); bgImg = null; loadBgImg(() => renderStudio()); alert("Background kustom kesimpan! Sekarang bikin ulang Carousel / Hero Banner buat lihat hasilnya."); } catch (err) { alert("Gambar kegedean buat disimpan. Coba pakai gambar yang lebih kecil ya."); } }; tmp.src = ev.target.result; }; reader.readAsDataURL(file); e.target.value = ""; }
+function hapusBgKustom() { bgKustomData = null; bgImg = null; localStorage.removeItem("bgKustom"); renderStudio(); alert("Background kustom dihapus. Carousel & Hero balik pakai tema warna."); }
+function renderStudio() { const el = document.getElementById("studio-tema"); if (el) { el.innerHTML = ""; Object.keys(TEMA_PROMO).forEach((k) => { const t = TEMA_PROMO[k]; const aktif = k === temaPromo; const b = document.createElement("button"); b.textContent = t.nama + (aktif ? " ✓" : ""); b.style.cssText = "cursor:pointer;border:" + (aktif ? "3px solid #1a1a1a" : "2px solid #ddd") + ";background:linear-gradient(135deg," + t.c1 + "," + t.c2 + ");color:#fff;border-radius:10px;padding:10px 14px;font-size:12px;font-weight:700"; b.onclick = () => pilihTema(k); el.appendChild(b); }); } if (bgKustomData && !bgImg) loadBgImg(() => renderStudio()); const st = document.getElementById("studio-bg-status"); if (st) { if (bgKustomData) { st.innerHTML = '<div style="display:flex;gap:10px;align-items:center;background:#eafaf0;border:1px solid #b6e3c6;border-radius:8px;padding:8px 10px"><img src="' + bgKustomData + '" style="width:56px;height:56px;object-fit:cover;border-radius:6px"><div style="font-size:12px;color:#1a7f37"><strong>Background kustom aktif.</strong><br>Slide cover & CTA di Carousel + Hero Banner bakal pakai background ini.</div></div>'; } else { st.innerHTML = '<p style="font-size:12px;color:#999">Belum ada background kustom. Kalau kosong, Carousel & Hero pakai tema warna di atas.</p>'; } } }
+function gambarPolosCanvas(w, h) { const canvas = document.createElement("canvas"); canvas.width = w; canvas.height = h; const ctx = canvas.getContext("2d"); const t = temaSekarang(); const grad = ctx.createLinearGradient(0, 0, w, h); grad.addColorStop(0, t.c1); grad.addColorStop(1, t.c2); ctx.fillStyle = grad; ctx.fillRect(0, 0, w, h); ctx.fillStyle = "rgba(255,255,255,0.08)"; ctx.beginPath(); ctx.arc(w - w * 0.12, h * 0.14, w * 0.28, 0, Math.PI * 2); ctx.fill(); const m = Math.round(Math.min(w, h) * 0.05); ctx.strokeStyle = "rgba(255,255,255,0.35)"; ctx.lineWidth = Math.max(3, Math.round(w * 0.008)); ctx.strokeRect(m, m, w - 2 * m, h - 2 * m); ctx.fillStyle = t.aksen; ctx.fillRect(m + 24, m + 24, Math.round(w * 0.12), Math.max(8, Math.round(h * 0.012))); ctx.fillStyle = "rgba(255,255,255,0.55)"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.font = "600 " + Math.round(Math.min(w, h) * 0.04) + "px system-ui, sans-serif"; ctx.fillText("Area konten · " + w + "x" + h, w / 2, h / 2); return canvas; }
+function buatPolos(tipe) { let w, h, nama; if (tipe === "story") { w = 1080; h = 1920; nama = "template-story"; } else if (tipe === "banner") { w = 1200; h = 630; nama = "template-banner"; } else { w = 1080; h = 1080; nama = "template-post"; } const canvas = gambarPolosCanvas(w, h); const el = document.getElementById("studio-preview"); el.innerHTML = ""; const info = document.createElement("p"); info.style.cssText = "font-size:13px;color:#555;margin-bottom:10px"; info.innerHTML = "Template polos <strong>" + w + "x" + h + "</strong> (tema " + temaSekarang().nama + ") siap. Pakai sebagai background di Canva/IG — tinggal tambahin foto & teks produk."; el.appendChild(info); canvas.style.cssText = "width:100%;max-width:" + (w > h ? "600" : "300") + "px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.15);display:block;margin-bottom:10px"; el.appendChild(canvas); const btn = document.createElement("button"); btn.textContent = "⬇️ Download Template"; btn.onclick = () => unduhCanvas(canvas, nama + ".png"); el.appendChild(btn); }
 function formatRupiahFull(n) { return "Rp " + (n || 0).toLocaleString("id-ID"); }
 function wrapText(ctx, text, x, y, maxW, lh, maxLines) {
 const words = String(text || "").split(" ");
@@ -1157,12 +1192,14 @@ function muatGambar(url) { return new Promise((resolve) => { if (!url) { resolve
 function unduhCanvas(canvas, nama) { canvas.toBlob((blob) => { const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = nama; document.body.appendChild(a); a.click(); document.body.removeChild(a); setTimeout(() => URL.revokeObjectURL(a.href), 1500); }); }
 function topProdukPromo(maxN) { return produkList.slice().filter((p) => (p.omset || 0) > 0 || (p.pesanan || 0) > 0).sort((a, b) => (b.omset || 0) - (a.omset || 0)).slice(0, maxN); }
 function gambarKartuTeks(ctx, s) {
+const t = temaSekarang();
 const w = 1080, h = 1080;
 const grad = ctx.createLinearGradient(0, 0, w, h);
-grad.addColorStop(0, "#1e3a8a"); grad.addColorStop(1, "#2383e2");
+grad.addColorStop(0, t.c1); grad.addColorStop(1, t.c2);
 ctx.fillStyle = grad; ctx.fillRect(0, 0, w, h);
+pakaiBgKustom(ctx, w, h);
 ctx.fillStyle = "rgba(255,255,255,0.08)"; ctx.beginPath(); ctx.arc(w - 140, 160, 300, 0, Math.PI * 2); ctx.fill();
-ctx.fillStyle = "#ffd166"; ctx.fillRect(100, 420, 110, 14);
+ctx.fillStyle = t.aksen; ctx.fillRect(100, 420, 110, 14);
 ctx.fillStyle = "#ffffff"; ctx.textAlign = "left"; ctx.textBaseline = "alphabetic"; ctx.font = "800 92px system-ui, sans-serif";
 const afterJ = wrapText(ctx, s.judul, 100, 560, 880, 100, 3);
 ctx.fillStyle = "rgba(255,255,255,0.85)"; ctx.font = "400 44px system-ui, sans-serif";
@@ -1171,34 +1208,37 @@ ctx.fillStyle = "rgba(255,255,255,0.7)"; ctx.font = "600 32px system-ui, sans-se
 ctx.fillText(s.tipe === "cover" ? "Geser ➜" : "Cek toko kami", 100, 1000);
 }
 function gambarKartuProduk(ctx, s, img) {
+const t = temaSekarang();
 const w = 1080, h = 1080, p = s.p, imgH = 620;
 ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, w, h);
 if (img) { drawImageCover(ctx, img, 0, 0, w, imgH); } else {
 const grad = ctx.createLinearGradient(0, 0, w, imgH);
-grad.addColorStop(0, "#2383e2"); grad.addColorStop(1, "#1e3a8a");
+grad.addColorStop(0, t.c2); grad.addColorStop(1, t.c1);
 ctx.fillStyle = grad; ctx.fillRect(0, 0, w, imgH);
 ctx.fillStyle = "rgba(255,255,255,0.9)"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.font = "800 220px system-ui, sans-serif";
 ctx.fillText((p.nama || "?").charAt(0).toUpperCase(), w / 2, imgH / 2);
 ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
 }
-ctx.fillStyle = "#ffd166"; ctx.beginPath(); ctx.arc(120, 120, 80, 0, Math.PI * 2); ctx.fill();
-ctx.fillStyle = "#1e3a8a"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.font = "800 66px system-ui, sans-serif";
+ctx.fillStyle = t.aksen; ctx.beginPath(); ctx.arc(120, 120, 80, 0, Math.PI * 2); ctx.fill();
+ctx.fillStyle = t.c1; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.font = "800 66px system-ui, sans-serif";
 ctx.fillText("#" + s.rank, 120, 126);
 ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
 ctx.fillStyle = "#ffffff"; ctx.fillRect(0, imgH, w, h - imgH);
 ctx.fillStyle = "#1a1a1a"; ctx.font = "800 56px system-ui, sans-serif";
 const afterNama = wrapText(ctx, p.nama || "Produk", 70, imgH + 90, 940, 64, 2);
-ctx.fillStyle = "#2383e2"; ctx.font = "800 66px system-ui, sans-serif";
+ctx.fillStyle = t.c2; ctx.font = "800 66px system-ui, sans-serif";
 const hargaTxt = (p.hargaJual || 0) > 0 ? formatRupiahFull(p.hargaJual) : formatRupiah(p.omset || 0) + " omset";
 ctx.fillText(hargaTxt, 70, afterNama + 70);
 ctx.fillStyle = "#666666"; ctx.font = "400 34px system-ui, sans-serif";
 ctx.fillText("Terjual " + (p.pesanan || 0).toLocaleString("id-ID") + " pesanan", 70, afterNama + 140);
 }
 function gambarHero(ctx, p, img) {
+const t = temaSekarang();
 const w = 1200, h = 630;
 const grad = ctx.createLinearGradient(0, 0, w, h);
-grad.addColorStop(0, "#1e3a8a"); grad.addColorStop(1, "#2383e2");
+grad.addColorStop(0, t.c1); grad.addColorStop(1, t.c2);
 ctx.fillStyle = grad; ctx.fillRect(0, 0, w, h);
+pakaiBgKustom(ctx, w, h);
 const panelX = 720, panelW = w - panelX;
 if (img) { drawImageCover(ctx, img, panelX, 0, panelW, h); } else {
 ctx.fillStyle = "rgba(255,255,255,0.12)"; ctx.fillRect(panelX, 0, panelW, h);
@@ -1207,20 +1247,20 @@ ctx.fillText((p.nama || "?").charAt(0).toUpperCase(), panelX + panelW / 2, h / 2
 ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
 }
 const fade = ctx.createLinearGradient(panelX - 140, 0, panelX + 80, 0);
-fade.addColorStop(0, "rgba(30,58,138,1)"); fade.addColorStop(1, "rgba(30,58,138,0)");
+fade.addColorStop(0, hexRgba(t.c1, 1)); fade.addColorStop(1, hexRgba(t.c1, 0));
 ctx.fillStyle = fade; ctx.fillRect(panelX - 140, 0, 220, h);
-ctx.fillStyle = "#ffd166"; ctx.fillRect(80, 72, 90, 8);
+ctx.fillStyle = t.aksen; ctx.fillRect(80, 72, 90, 8);
 ctx.fillStyle = "#ffffff"; ctx.textBaseline = "alphabetic"; ctx.font = "800 36px system-ui, sans-serif";
 ctx.fillText("PRODUK UNGGULAN", 80, 120);
 ctx.font = "800 60px system-ui, sans-serif";
 const afterNama = wrapText(ctx, p.nama || "Produk", 80, 200, 580, 68, 3);
-ctx.fillStyle = "#ffd166"; ctx.font = "800 58px system-ui, sans-serif";
+ctx.fillStyle = t.aksen; ctx.font = "800 58px system-ui, sans-serif";
 const hargaTxt = (p.hargaJual || 0) > 0 ? formatRupiahFull(p.hargaJual) : formatRupiah(p.omset || 0) + " omset";
 ctx.fillText(hargaTxt, 80, afterNama + 60);
 ctx.fillStyle = "rgba(255,255,255,0.85)"; ctx.font = "400 30px system-ui, sans-serif";
 ctx.fillText("Terjual " + (p.pesanan || 0).toLocaleString("id-ID") + " · Stok " + (p.stok == null ? "-" : p.stok), 80, afterNama + 115);
-ctx.fillStyle = "#ffd166"; ctx.fillRect(80, h - 130, 320, 72);
-ctx.fillStyle = "#1e3a8a"; ctx.textBaseline = "middle"; ctx.font = "700 32px system-ui, sans-serif";
+ctx.fillStyle = t.aksen; ctx.fillRect(80, h - 130, 320, 72);
+ctx.fillStyle = t.c1; ctx.textBaseline = "middle"; ctx.font = "700 32px system-ui, sans-serif";
 ctx.fillText("ORDER SEKARANG", 112, h - 94);
 ctx.textBaseline = "alphabetic";
 }
