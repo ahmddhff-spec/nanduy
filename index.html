@@ -7,54 +7,54 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Rajdhani:wght@500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: "Rajdhani", system-ui, -apple-system, "Segoe UI", sans-serif; background-color: #060814; background-image: radial-gradient(circle at 12% -10%, rgba(255,0,170,0.18), transparent 45%), radial-gradient(circle at 92% 0%, rgba(0,224,255,0.18), transparent 45%), linear-gradient(rgba(0,224,255,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(0,224,255,0.06) 1px, transparent 1px); background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px; background-attachment: fixed; color: #1a2233; padding: 14px; max-width: 1200px; margin: 0 auto; min-height: 100vh; }
-    header { text-align: center; margin-bottom: 16px; }
-    header h1 { font-family: "Orbitron", sans-serif; font-size: 24px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; color: #eafcff; text-shadow: 0 0 6px #00e0ff, 0 0 18px rgba(0,224,255,0.7), 0 0 34px rgba(255,0,170,0.4); }
-    header p { color: #8be6ff; margin-top: 8px; letter-spacing: 2px; font-size: 13px; text-transform: uppercase; }
-    .card { background: #ffffff; border: 1px solid rgba(0,224,255,0.45); border-radius: 10px; padding: 12px 16px; box-shadow: 0 0 16px rgba(0,224,255,0.28); margin-bottom: 10px; position: relative; }
-    .card::before { content: ""; position: absolute; top: -1px; left: 18px; right: 18px; height: 2px; background: linear-gradient(90deg, transparent, #00e0ff, #ff00aa, transparent); border-radius: 2px; }
-    h2 { font-family: "Orbitron", sans-serif; font-size: 15px; font-weight: 700; letter-spacing: 1px; margin-bottom: 10px; color: #0a1f3c; }
+    body { font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif; background: #f4f6fb; color: #1e2530; padding: 16px; max-width: 1200px; margin: 0 auto; min-height: 100vh; -webkit-font-smoothing: antialiased; }
+    header { text-align: center; margin-bottom: 20px; padding: 6px 0; }
+    header h1 { font-size: 25px; font-weight: 800; letter-spacing: -.5px; color: #111827; }
+    header p { color: #6b7280; margin-top: 6px; font-size: 13px; }
+    .card { background: #ffffff; border: 1px solid #eef1f5; border-radius: 16px; padding: 16px 18px; box-shadow: 0 1px 2px rgba(16,24,40,0.04), 0 6px 18px rgba(16,24,40,0.04); margin-bottom: 12px; position: relative; }
+    h2 { font-size: 16px; font-weight: 700; letter-spacing: -.2px; margin-bottom: 12px; color: #111827; }
     .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
-    label { display: flex; flex-direction: column; font-size: 13px; color: #4a5a72; gap: 4px; font-weight: 600; }
-    input, select { padding: 8px 10px; border: 1px solid #cfe3ff; border-radius: 8px; font-size: 14px; font-family: inherit; background: #f7fbff; color: #16203a; }
-    input:focus, select:focus { outline: none; border-color: #00b8d4; box-shadow: 0 0 0 3px rgba(0,184,212,0.18); }
+    label { display: flex; flex-direction: column; font-size: 13px; color: #4b5563; gap: 5px; font-weight: 500; }
+    input, select { padding: 9px 11px; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 14px; font-family: inherit; background: #f8fafc; color: #111827; }
+    input:focus, select:focus { outline: none; border-color: #6366f1; background: #fff; box-shadow: 0 0 0 3px rgba(99,102,241,0.15); }
     .actions { margin-top: 16px; display: flex; gap: 10px; }
-    button { background: linear-gradient(135deg, #00e0ff, #6a00ff); color: #fff; border: none; padding: 9px 16px; border-radius: 8px; font-size: 14px; font-weight: 700; font-family: inherit; letter-spacing: .5px; cursor: pointer; box-shadow: 0 0 12px rgba(0,224,255,0.4); transition: transform .12s, box-shadow .12s; }
-    button:hover { transform: translateY(-1px); box-shadow: 0 0 18px rgba(106,0,255,0.6); opacity: 1; }
-    button.ghost { background: rgba(0,224,255,0.08); color: #0077a3; border: 1px solid rgba(0,184,212,0.5); box-shadow: none; }
-    button.ghost:hover { background: rgba(0,224,255,0.18); box-shadow: 0 0 12px rgba(0,224,255,0.35); }
-    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 12px; }
-    .stat-box { background: #ffffff; border: 1px solid rgba(106,0,255,0.35); border-radius: 10px; padding: 11px 13px; box-shadow: 0 0 14px rgba(106,0,255,0.18); }
-    .stat-box .num { font-family: "Orbitron", sans-serif; font-size: 19px; font-weight: 800; color: #6a00ff; text-shadow: 0 0 10px rgba(106,0,255,0.25); }
-    .stat-box .lbl { font-size: 12px; color: #5a6b85; margin-bottom: 4px; text-transform: uppercase; letter-spacing: .5px; }
-    .stat-box .sub { font-size: 11px; color: #7a8aa3; margin-top: 4px; }
+    button { background: #4f46e5; color: #fff; border: none; padding: 10px 16px; border-radius: 10px; font-size: 14px; font-weight: 600; font-family: inherit; cursor: pointer; box-shadow: 0 1px 2px rgba(79,70,229,0.25); transition: transform .12s, box-shadow .12s, background .12s; }
+    button:hover { background: #4338ca; transform: translateY(-1px); box-shadow: 0 4px 14px rgba(79,70,229,0.3); }
+    button.ghost { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; box-shadow: none; }
+    button.ghost:hover { background: #e9eef5; box-shadow: none; }
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 14px; }
+    .stat-box { background: #ffffff; border: 1px solid #eef1f5; border-radius: 14px; padding: 14px 15px; box-shadow: 0 1px 2px rgba(16,24,40,0.04), 0 6px 18px rgba(16,24,40,0.03); }
+    .stat-box .num { font-size: 21px; font-weight: 800; color: #4f46e5; letter-spacing: -.5px; }
+    .stat-box .lbl { font-size: 12px; color: #6b7280; margin-bottom: 5px; font-weight: 500; }
+    .stat-box .sub { font-size: 11px; color: #9ca3af; margin-top: 5px; }
     .toolbar { display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
     .toolbar input { flex: 1; min-width: 200px; }
     .filters { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
-    .filters button { background: rgba(0,224,255,0.08); color: #0077a3; border: 1px solid rgba(0,184,212,0.5); box-shadow: none; }
-    .filters button.active { background: linear-gradient(135deg, #00e0ff, #6a00ff); color: #fff; box-shadow: 0 0 12px rgba(0,224,255,0.45); }
-.kw-mode-btn { background: rgba(0,224,255,0.08); color: #0077a3; border: 1px solid rgba(0,184,212,0.5); box-shadow: none; }
-.kw-mode-btn.active { background: linear-gradient(135deg, #00e0ff, #6a00ff); color: #fff; box-shadow: 0 0 12px rgba(0,224,255,0.45); }
+    .filters button { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; box-shadow: none; }
+    .filters button.active { background: #4f46e5; color: #fff; box-shadow: 0 1px 2px rgba(79,70,229,0.25); }
+.kw-mode-btn { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; box-shadow: none; }
+.kw-mode-btn.active { background: #4f46e5; color: #fff; box-shadow: 0 1px 2px rgba(79,70,229,0.25); }
     table { width: 100%; border-collapse: collapse; font-size: 13px; }
-    th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #e6eefc; vertical-align: top; }
-    th { font-size: 11px; text-transform: uppercase; color: #6a00ff; letter-spacing: .5px; }
+    th, td { text-align: left; padding: 8px; border-bottom: 1px solid #eef1f5; vertical-align: top; }
+    th { font-size: 11px; text-transform: uppercase; color: #6b7280; letter-spacing: .4px; font-weight: 600; }
     .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; white-space: nowrap; }
     .level-high { background: #d6f5dd; color: #1a7f37; }
-    .level-mid  { background: #fdf3d0; color: #9a6700; }
-    .level-low  { background: #fbdcdc; color: #c1271e; }
-    .level-none { background: #eee; color: #888; }
+    .level-mid { background: #fdf3d0; color: #9a6700; }
+    .level-low { background: #fbdcdc; color: #c1271e; }
+    .level-none { background: #eef1f5; color: #888; }
     .tip { font-size: 11px; color: #b35900; max-width: 240px; }
     .tip.ok { color: #1a7f37; }
-    .row-actions button { background: none; color: #0077a3; padding: 2px 6px; font-size: 13px; box-shadow: none; }
+    .row-actions button { background: none; color: #4f46e5; padding: 2px 6px; font-size: 13px; box-shadow: none; }
+    .row-actions button:hover { background: #f1f5f9; transform: none; box-shadow: none; }
     .row-actions button.del { color: #c1271e; }
-    .empty { text-align: center; color: #999; padding: 20px; }
-    footer { text-align: center; }
+    .empty { text-align: center; color: #9ca3af; padding: 20px; }
+    footer { text-align: center; padding: 10px 0 30px; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
 .card.collapsed .card-body { display: none; }
 .card.collapsed h2 { margin-bottom: 0; }
 .acc-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
-.acc-ico { font-size: 13px; color: #00b8d4; transition: transform .2s; }
+.acc-ico { font-size: 13px; color: #9ca3af; transition: transform .2s; }
 .card:not(.collapsed) .acc-ico { transform: rotate(90deg); }
     @media (max-width: 800px) { .stats { grid-template-columns: repeat(2, 1fr); } table { font-size: 11px; } }
   </style>
@@ -75,7 +75,7 @@
 <li><strong>Set target omset bulanan.</strong> Di panel <strong>🎯 Target Omset Bulanan</strong> (tepat di bawah), isi target lalu klik Simpan. Progress bar + setoran harian langsung kehitung.</li>
 <li><strong>Baca keputusan AI.</strong> Panel <strong>🧠 Keputusan AI Spesialis</strong> kasih skor kesehatan toko + langkah prioritas. Tiap produk dapet 1 vonis (Scale, Restock, Benahi, dll).</li>
 <li><strong>Pantau tren tiap minggu.</strong> Klik <strong>Simpan Snapshot Minggu Ini</strong> di panel Tren Antar-Minggu. Makin rutin, makin akurat grafik, evaluasi bulanan, &amp; proyeksinya.</li>
-<li><strong>Manfaatin tool tambahan:</strong> 💎 Hidden Gems (produk potensial), 📦 Analisis ABC, 🔑 Koreksi Kata Kunci + Generator Judul SEO, 🎨 Generator Konten Promo, 🔍 Studio koreksi foto.</li>
+<li><strong>Manfaatin tool tambahan:</strong> 💎 Hidden Gems (produk potensial), 📦 Analisis ABC, 🔑 Koreksi Kata Kunci + Generator Judul SEO, 🎨 Generator Konten Promo, 🛒 Kalkulator Shopee (profit bersih), 🔍 Studio koreksi foto.</li>
 <li><strong>Tarik laporan.</strong> Panel <strong>📋 Laporan Mingguan</strong> bikin ringkasan siap-tempel ke WhatsApp/Slack. Tinggal klik Copy.</li>
 </ol>
 <p style="font-size:12px;color:#888;margin-top:10px">💡 Data tersimpan otomatis di browser ini (localStorage). Klik <strong>💾 Backup Data</strong> di paling bawah buat nyimpen cadangan file, &amp; <strong>♻️ Restore Data</strong> buat balikin di browser/HP lain — biar nggak kehilangan data produkmu.</p>
@@ -97,6 +97,32 @@
 <h2>💰 Analisis Profit & Margin</h2>
 <p style="font-size:13px;color:#666;margin-bottom:12px">Omset gede belum tentu cuan. Isi kolom <strong>Modal / HPP</strong> tiap produk, nanti laba kotor, margin, &amp; laba bersih setelah iklan kehitung otomatis di sini.</p>
 <div id="profit"></div>
+</section>
+<section class="card" id="kalkulator-card">
+<h2>🛒 Kalkulator Shopee — Profit Bersih per Produk</h2>
+<p style="font-size:13px;color:#666;margin-bottom:12px">Hitung profit bersih beneran setelah SEMUA potongan Shopee (admin, layanan/program, iklan, pajak iklan) + ongkos lain. Isi angkanya manual, atau pilih produk biar harga &amp; modal keisi otomatis.</p>
+<div style="margin-bottom:14px"><label style="max-width:440px">Ambil dari produk (opsional) <select id="kalk-produk" onchange="kalkIsiProduk()"></select></label></div>
+<div class="grid">
+<label>Harga Jual / pcs (Rp) <input type="number" id="kalk-harga" min="0" placeholder="cth: 75000" /></label>
+<label>HPP / Modal per pcs (Rp) <input type="number" id="kalk-modal" min="0" placeholder="cth: 30000" /></label>
+<label>Qty (jumlah pcs) <input type="number" id="kalk-qty" min="1" value="1" /></label>
+<label>Admin Shopee (%) <input type="number" id="kalk-admin" min="0" step="0.1" value="8" /></label>
+<label>Biaya Layanan / Program (%) <input type="number" id="kalk-layanan" min="0" step="0.1" value="0" placeholder="gratis ongkir xtra, cashback" /></label>
+<label>Iklan (%) <input type="number" id="kalk-iklan" min="0" step="0.1" value="0" /></label>
+<label>Pajak atas Iklan (%) <input type="number" id="kalk-pajakiklan" min="0" step="0.1" value="0" /></label>
+<label>Biaya Lain (%) <input type="number" id="kalk-lainpct" min="0" step="0.1" value="0" /></label>
+<label>Biaya per Pesanan (Rp) <input type="number" id="kalk-perpesanan" min="0" value="0" placeholder="packing, dll" /></label>
+</div>
+<div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap"><button onclick="hitungKalkulator()">💰 Hitung Profit</button><button class="ghost" onclick="resetKalkulator()">Reset</button></div>
+<div id="kalk-hasil" style="margin-top:16px"></div>
+<hr style="border:none;border-top:1px solid #eef1f5;margin:18px 0" />
+<div style="font-size:14px;font-weight:700;margin-bottom:6px">🎯 Markup Terbalik — cari harga jual dari target margin</div>
+<div style="font-size:12px;color:#888;margin-bottom:10px">Tentuin target margin bersih yang kamu mau, nanti dihitung berapa harga jual minimal yang harus dipasang (pakai modal &amp; % biaya di atas).</div>
+<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+<label style="flex:1;min-width:200px">Target Margin Bersih (%) <input type="number" id="kalk-targetmargin" min="0" max="95" step="0.5" value="20" /></label>
+<button onclick="hitungMarkupTerbalik()">Cari Harga Jual</button>
+</div>
+<div id="kalk-markup-hasil" style="margin-top:14px"></div>
 </section>
 <section class="card" id="tracking-card">
 <h2>📅 Tren Antar-Minggu</h2>
@@ -728,6 +754,7 @@ if (d.catatan) ada.catatan = d.catatan;
   renderForecast();
 renderStudio();
 renderKwSelect();
+  kalkAmbilProdukOptions();
     }
 
     function renderAnalisis() {
@@ -999,6 +1026,92 @@ function renderCharts() {
     if (chartRoas) chartRoas.destroy();
     chartRoas = new Chart(document.getElementById("chart-roas"), { type: "bar", data: { labels: topC.map((c) => c.nama.length > 18 ? c.nama.slice(0, 18) + "..." : c.nama), datasets: [{ label: "ROAS", data: topC.map((c) => +roasOf(c).toFixed(2)), backgroundColor: topC.map((c) => roasOf(c) >= 4 ? "#1a7f37" : roasOf(c) >= 2 ? "#e0a800" : "#c1271e") }] }, options: { indexAxis: "y", plugins: { legend: { display: false } } } });
   }
+}
+function kalkNum(id) { const v = parseFloat((document.getElementById(id) || {}).value); return isNaN(v) ? 0 : v; }
+function kalkAmbilProdukOptions() {
+  const sel = document.getElementById("kalk-produk");
+  if (!sel) return;
+  const cur = sel.value;
+  const tops = produkList.slice().sort((a, b) => (b.omset || 0) - (a.omset || 0));
+  sel.innerHTML = "";
+  const o0 = document.createElement("option"); o0.value = ""; o0.textContent = tops.length ? "— manual / pilih produk —" : "(belum ada produk)"; sel.appendChild(o0);
+  tops.forEach((p) => { const o = document.createElement("option"); o.value = p.id; o.textContent = p.nama || "Tanpa nama"; sel.appendChild(o); });
+  if (cur) sel.value = cur;
+}
+function kalkIsiProduk() {
+  const sel = document.getElementById("kalk-produk");
+  const p = produkList.find((x) => String(x.id) === String(sel.value));
+  if (!p) return;
+  if ((p.hargaJual || 0) > 0) document.getElementById("kalk-harga").value = p.hargaJual;
+  if ((p.modal || 0) > 0) document.getElementById("kalk-modal").value = p.modal;
+}
+function hitungKalkulator() {
+  const el = document.getElementById("kalk-hasil");
+  if (!el) return;
+  const harga = kalkNum("kalk-harga"), modal = kalkNum("kalk-modal");
+  let qty = kalkNum("kalk-qty"); if (qty < 1) qty = 1;
+  if (harga <= 0) { el.innerHTML = '<p style="color:#c1271e;font-size:13px">Isi Harga Jual / pcs dulu ya.</p>'; return; }
+  const adminP = kalkNum("kalk-admin") / 100, layananP = kalkNum("kalk-layanan") / 100, iklanP = kalkNum("kalk-iklan") / 100, pajakIklanP = kalkNum("kalk-pajakiklan") / 100, lainP = kalkNum("kalk-lainpct") / 100, perPesanan = kalkNum("kalk-perpesanan");
+  const bAdmin = harga * adminP, bLayanan = harga * layananP, bIklan = harga * iklanP, bPajakIklan = bIklan * pajakIklanP, bLain = harga * lainP;
+  const totalPotong = bAdmin + bLayanan + bIklan + bPajakIklan + bLain + perPesanan;
+  const profitPcs = harga - modal - totalPotong;
+  const marginPct = harga > 0 ? (profitPcs / harga) * 100 : 0;
+  const profitTotal = profitPcs * qty;
+  const warna = profitPcs < 0 ? "#c1271e" : marginPct < 15 ? "#9a6700" : "#1a7f37";
+  const box = (lbl, val, sub, w) => '<div class="stat-box"><div class="lbl">' + lbl + '</div><div class="num" style="font-size:18px' + (w ? ';color:' + w : '') + '">' + val + '</div>' + (sub ? '<div class="sub">' + sub + '</div>' : '') + '</div>';
+  let html = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px">';
+  html += box("Profit Bersih / pcs", (profitPcs < 0 ? "-" : "") + formatRupiahFull(Math.abs(Math.round(profitPcs))), "dari harga " + formatRupiahFull(harga), warna);
+  html += box("Margin Bersih", marginPct.toFixed(1) + "%", marginPct < 0 ? "rugi" : marginPct < 15 ? "tipis" : "sehat", warna);
+  html += box("Profit Total (" + qty + " pcs)", (profitTotal < 0 ? "-" : "") + formatRupiahFull(Math.abs(Math.round(profitTotal))), "qty × profit/pcs", warna);
+  html += box("Total Potongan / pcs", formatRupiahFull(Math.round(totalPotong)), (harga > 0 ? ((totalPotong / harga) * 100).toFixed(1) : 0) + "% dari harga", "#9a6700");
+  html += '</div>';
+  const baris = (lbl, val, neg) => '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f1f3f7;font-size:13px"><span style="color:#555">' + lbl + '</span><span style="font-weight:600;color:' + (neg ? "#c1271e" : "#111827") + '">' + (neg ? "- " : "") + formatRupiahFull(Math.round(val)) + '</span></div>';
+  html += '<div style="background:#f8fafc;border:1px solid #eef1f5;border-radius:12px;padding:12px 14px;margin-bottom:14px">';
+  html += '<div style="font-size:12px;font-weight:700;color:#111827;margin-bottom:4px">Rincian per pcs</div>';
+  html += baris("Harga jual", harga, false);
+  html += baris("Modal / HPP", modal, true);
+  if (bAdmin > 0) html += baris("Admin Shopee (" + kalkNum("kalk-admin") + "%)", bAdmin, true);
+  if (bLayanan > 0) html += baris("Biaya layanan/program (" + kalkNum("kalk-layanan") + "%)", bLayanan, true);
+  if (bIklan > 0) html += baris("Iklan (" + kalkNum("kalk-iklan") + "%)", bIklan, true);
+  if (bPajakIklan > 0) html += baris("Pajak atas iklan (" + kalkNum("kalk-pajakiklan") + "%)", bPajakIklan, true);
+  if (bLain > 0) html += baris("Biaya lain (" + kalkNum("kalk-lainpct") + "%)", bLain, true);
+  if (perPesanan > 0) html += baris("Biaya per pesanan", perPesanan, true);
+  html += '<div style="display:flex;justify-content:space-between;padding:8px 0 0;font-size:14px;font-weight:800"><span>Profit bersih / pcs</span><span style="color:' + warna + '">' + (profitPcs < 0 ? "- " : "") + formatRupiahFull(Math.abs(Math.round(profitPcs))) + '</span></div>';
+  html += '</div>';
+  let vonis;
+  if (profitPcs < 0) vonis = "⚠️ <strong>Rugi " + formatRupiahFull(Math.abs(Math.round(profitPcs))) + "/pcs.</strong> Harga jual nggak nutup modal + potongan Shopee. Naikin harga, tekan HPP, atau kurangi biaya iklan.";
+  else if (marginPct < 15) vonis = "Margin bersih <strong>" + marginPct.toFixed(1) + "%</strong> tergolong tipis — rawan boncos kalau ada biaya tak terduga. Pertimbangin naikin harga / bundling.";
+  else vonis = "Margin bersih <strong>" + marginPct.toFixed(1) + "%</strong> sehat. Aman buat di-scale, apalagi kalau volume jalan.";
+  html += '<div style="border-left:4px solid ' + warna + ';background:#fff;padding:10px 14px;font-size:13px;line-height:1.6;border-radius:0 8px 8px 0">' + vonis + '</div>';
+  el.innerHTML = html;
+}
+function resetKalkulator() {
+  ["kalk-harga", "kalk-modal", "kalk-perpesanan", "kalk-layanan", "kalk-iklan", "kalk-pajakiklan", "kalk-lainpct"].forEach((id) => { const e = document.getElementById(id); if (!e) return; e.value = (id === "kalk-harga" || id === "kalk-modal") ? "" : "0"; });
+  const q = document.getElementById("kalk-qty"); if (q) q.value = 1;
+  const a = document.getElementById("kalk-admin"); if (a) a.value = 8;
+  const h = document.getElementById("kalk-hasil"); if (h) h.innerHTML = "";
+  const mk = document.getElementById("kalk-markup-hasil"); if (mk) mk.innerHTML = "";
+}
+function hitungMarkupTerbalik() {
+  const el = document.getElementById("kalk-markup-hasil");
+  if (!el) return;
+  const modal = kalkNum("kalk-modal"), perPesanan = kalkNum("kalk-perpesanan");
+  const targetPct = kalkNum("kalk-targetmargin"), m = targetPct / 100;
+  if (modal <= 0) { el.innerHTML = '<p style="color:#c1271e;font-size:13px">Isi HPP / Modal dulu di atas biar harga jualnya bisa dihitung.</p>'; return; }
+  const adminP = kalkNum("kalk-admin") / 100, layananP = kalkNum("kalk-layanan") / 100, iklanP = kalkNum("kalk-iklan") / 100, pajakIklanP = kalkNum("kalk-pajakiklan") / 100, lainP = kalkNum("kalk-lainpct") / 100;
+  const f = adminP + layananP + iklanP + lainP + iklanP * pajakIklanP;
+  const denom = (1 - f) - m;
+  if (denom <= 0) { el.innerHTML = '<p style="color:#c1271e;font-size:13px">Target margin ' + targetPct + '% nggak masuk akal dengan total potongan ' + (f * 100).toFixed(1) + '%. Turunin target margin atau kurangi biaya dulu.</p>'; return; }
+  const hargaMin = (modal + perPesanan) / denom;
+  const hargaBulat = Math.ceil(hargaMin / 500) * 500;
+  const profit = hargaBulat * (1 - f) - modal - perPesanan;
+  const marginReal = hargaBulat > 0 ? (profit / hargaBulat) * 100 : 0;
+  let html = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px">';
+  html += '<div class="stat-box"><div class="lbl">Harga Jual Minimal</div><div class="num" style="font-size:18px;color:#4f46e5">' + formatRupiahFull(hargaBulat) + '</div><div class="sub">biar margin ' + targetPct + '% tercapai</div></div>';
+  html += '<div class="stat-box"><div class="lbl">Profit / pcs</div><div class="num" style="font-size:18px;color:#1a7f37">' + formatRupiahFull(Math.round(profit)) + '</div><div class="sub">margin real ' + marginReal.toFixed(1) + '%</div></div>';
+  html += '</div>';
+  html += '<div style="border-left:4px solid #4f46e5;background:#f8fafc;padding:10px 14px;font-size:13px;line-height:1.6;border-radius:0 8px 8px 0;margin-top:12px">Pasang harga jual minimal <strong>' + formatRupiahFull(hargaBulat) + '</strong> (udah dibulatin ke atas) buat dapet margin bersih ~' + targetPct + '% setelah potongan Shopee ' + (f * 100).toFixed(1) + '% + modal ' + formatRupiahFull(modal) + '.</div>';
+  el.innerHTML = html;
 }
 function renderProfit() {
   const el = document.getElementById("profit");
