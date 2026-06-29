@@ -1433,7 +1433,11 @@ const seen = {}; const kept = [];
 tokens.forEach((w) => { const k = bersih(w); if (!k) return; if (seen[k]) return; seen[k] = 1; kept.push(w.replace(/[()]/g, "")); });
 const judulRapi = kept.join(" ").replace(/\s+/g, " ").trim();
 const material = materialKeys.find((m) => low.indexOf(m) !== -1) || "";
-const fitur = fiturKeys.filter((f) => low.indexOf(f) !== -1);
+const capAll = (s) => String(s || "").split(" ").map(cap).join(" ");
+const fraseKeys = ["anti tumpah", "anti bocor", "anti karat", "anti slip", "anti air", "anti panas", "tahan panas dingin", "tahan panas", "tahan lama", "tahan air", "food grade", "bpa free", "multifungsi", "serbaguna"];
+const fitur = [];
+fraseKeys.forEach((f) => { if (low.indexOf(f) !== -1 && !fitur.some((x) => x.indexOf(f) !== -1 || f.indexOf(x) !== -1)) fitur.push(f); });
+fiturKeys.forEach((f) => { if (lowTokens.indexOf(f) !== -1 && !fitur.some((x) => x.split(" ").indexOf(f) !== -1)) fitur.push(f); });
 const ukuran = ukuranKeys.filter((u) => lowTokens.indexOf(u) !== -1);
 const w0 = tokens[0] ? bersih(tokens[0]) : "";
 let brand = "";
@@ -1443,7 +1447,7 @@ for (let i = 0; i < tokens.length; i++) { const k = bersih(tokens[i]); if (produ
 if (!jenis) jenis = ulang[0] || (kept[1] ? bersih(kept[1]) : "");
 const dipakai = {};
 [brand, jenis, material].forEach((x) => { if (x) dipakai[bersih(x)] = 1; });
-fitur.forEach((f) => dipakai[f] = 1); ukuran.forEach((u) => dipakai[u] = 1); stop.forEach((s) => dipakai[s] = 1); hype.forEach((h) => dipakai[h] = 1);
+fitur.forEach((f) => f.split(" ").forEach((w) => dipakai[w] = 1)); ukuran.forEach((u) => dipakai[u] = 1); stop.forEach((s) => dipakai[s] = 1); hype.forEach((h) => dipakai[h] = 1);
 const karakter = [];
 kept.forEach((w) => { const k = bersih(w); if (k && k.length > 2 && !dipakai[k] && karakter.indexOf(k) === -1) karakter.push(k); });
 const inti = [];
@@ -1453,7 +1457,7 @@ if (material) inti.push(cap(material));
 karakter.slice(0, 2).forEach((k) => inti.push(cap(k)));
 const ekor = [];
 if (jenis) ekor.push(cap(jenis));
-fitur.slice(0, 2).forEach((f) => ekor.push(cap(f)));
+fitur.slice(0, 2).forEach((f) => ekor.push(capAll(f)));
 if (ukuran.length) ekor.push("Ukuran " + cap(ukuran[0]));
 let saranJudul = (inti.join(" ") + (ekor.length ? " - " + ekor.join(" ") : "")).replace(/\s+/g, " ").trim();
 if (saranJudul.length > 100) saranJudul = saranJudul.slice(0, 100).trim();
@@ -1478,6 +1482,16 @@ let lbl, warna;
 if (skor >= 80) { lbl = "Judul sudah bagus"; warna = "#1a7f37"; }
 else if (skor >= 55) { lbl = "Cukup, bisa dirapikan"; warna = "#9a6700"; }
 else { lbl = "Perlu dibenahi"; warna = "#c1271e"; }
+const kwSaran = [];
+const pushKw = (kw, tipe, alasan) => { if (!kw) return; const nk = kw.toLowerCase().replace(/\s+/g, " ").trim(); if (!nk || kwSaran.some((x) => x.kw.toLowerCase() === nk)) return; kwSaran.push({ kw: kw, tipe: tipe, alasan: alasan }); };
+if (jenis) pushKw(cap(jenis), "Luas", "Kata kunci umum produkmu: paling banyak dicari tapi saingannya juga paling ketat. Wajib ada biar masuk radar, tapi jangan cuma andelin ini.");
+if (jenis && material) pushKw(cap(jenis) + " " + cap(material), "Spesifik", "Jenis + bahan. Pembeli yang nyari bahan tertentu biasanya lebih siap beli, dan saingannya lebih sedikit.");
+if (jenis && fitur[0]) pushKw(cap(jenis) + " " + capAll(fitur[0]), "Spesifik", "Nonjolin fitur unggulan - narik orang yang butuh fungsi itu persis, jadi konversinya lebih tinggi.");
+if (jenis && fitur[1]) pushKw(cap(jenis) + " " + capAll(fitur[1]), "Spesifik", "Variasi fitur lain biar kebagian pencarian yang beda-beda.");
+if (jenis && karakter[0]) pushKw(cap(jenis) + " " + cap(karakter[0]), "Spesifik", "Pakai ciri khas / varian produk biar beda dari kompetitor.");
+if (jenis && ukuran[0]) pushKw(cap(jenis) + " " + cap(ukuran[0]), "Spesifik", "Banyak pembeli nyaring pakai ukuran - bantu yang ukurannya pas ketemu produkmu.");
+if (jenis && material && fitur[0]) pushKw(cap(jenis) + " " + cap(material) + " " + capAll(fitur[0]), "Spesifik (long-tail)", "Gabungan 3 kata: yang nyari paling sedikit tapi paling niat beli, saingan paling sepi - emas buat closing.");
+if (!kwSaran.length && jenis) pushKw(cap(jenis), "Luas", "Kata kunci dasar produkmu.");
 const kwTambah = [];
 if (jenis && material) kwTambah.push(cap(jenis) + " " + cap(material));
 if (jenis && karakter[0]) kwTambah.push(cap(jenis) + " " + cap(karakter[0]));
@@ -1493,7 +1507,12 @@ html += '<div style="font-size:13px;background:#fff;border:1px solid #eee;border
 html += '<div style="margin-bottom:12px"><div style="font-size:12px;font-weight:700;color:#c1271e;margin-bottom:6px">Masalah yang kedeteksi</div>' + (masalah.length ? '<ul style="margin:0 0 0 16px;font-size:13px;line-height:1.7;color:#333">' + masalah.map((x) => '<li>' + x + '</li>').join('') + '</ul>' : '<p style="font-size:13px;color:#1a7f37">Mantap, nggak ada masalah berarti.</p>') + '</div>';
 html += '<div style="margin-bottom:12px"><div style="font-size:12px;font-weight:700;color:#1a7f37;margin-bottom:6px">Versi rapi (buang kata dobel)</div><div style="font-size:13px;background:#eafaf0;border:1px solid #b6e3c6;border-radius:6px;padding:8px">' + judulRapi + '</div></div>';
 html += '<div style="margin-bottom:12px"><div style="font-size:12px;font-weight:700;color:#2383e2;margin-bottom:6px">Saran judul terstruktur (AI)</div><div style="font-size:13px;background:#eef5ff;border:1px solid #bcd9f7;border-radius:6px;padding:8px">' + saranJudul + '</div><div style="font-size:11px;color:#888;margin-top:4px">Pola: Brand + Jenis + Bahan + Varian - Jenis + Fitur + Ukuran. Sesuaikan kalau ada bagian yang kurang pas.</div></div>';
-if (kwUnik.length) html += '<div><div style="font-size:12px;font-weight:700;color:#6b21a8;margin-bottom:6px">Saran kata kunci buat dimasukin</div><div style="display:flex;flex-wrap:wrap;gap:6px">' + kwUnik.map((k) => '<span style="font-size:12px;background:#f3eaff;border-radius:20px;padding:3px 10px">' + k + '</span>').join('') + '</div></div>';
+if (kwSaran.length) {
+html += '<div style="margin-top:2px"><div style="font-size:12px;font-weight:700;color:#6b21a8;margin-bottom:4px">Saran kata kunci + alasannya</div>';
+html += '<div style="font-size:11px;color:#888;margin-bottom:8px;line-height:1.5"><strong>Luas</strong> = jangkauan gede tapi saingan ketat. <strong>Spesifik</strong> = yang nyari lebih dikit tapi lebih niat beli & saingan sepi. Campur dua-duanya: beberapa luas buat jangkauan, sisanya spesifik buat closing.</div>';
+html += kwSaran.map((k) => { const luas = k.tipe.indexOf("Luas") !== -1; const wr = luas ? "#2383e2" : "#6b21a8"; return '<div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:7px"><span style="flex-shrink:0;font-size:10px;font-weight:700;color:#fff;background:' + wr + ';padding:2px 9px;border-radius:20px;margin-top:2px">' + k.tipe + '</span><div><div style="font-size:13px;font-weight:600">' + k.kw + '</div><div style="font-size:11px;color:#777;line-height:1.5">' + k.alasan + '</div></div></div>'; }).join('');
+html += '</div>';
+}
 html += '</div>';
 return html;
 }
