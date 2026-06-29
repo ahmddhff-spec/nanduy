@@ -165,10 +165,10 @@
 <div><button onclick="jalankanKoreksiKw()">Koreksi Kata Kunci (AI)</button></div>
 <div id="kw-hasil" style="margin-top:14px"></div>
 <hr style="border:none;border-top:1px solid #eee;margin:18px 0" />
-<div style="font-size:14px;font-weight:700;margin-bottom:6px">Koreksi Banyak Judul Sekaligus</div>
-<div style="font-size:12px;color:#888;margin-bottom:6px">Tempel banyak judul produk (1 judul per baris, maksimal 100). AI bakal cari kata kunci bagus + kasih 3 judul siap pakai buat tiap baris, ngikut mode di atas.</div>
+<div style="font-size:14px;font-weight:700;margin-bottom:6px">Generator Judul dari Banyak Kata Kunci</div>
+<div style="font-size:12px;color:#888;margin-bottom:6px">Tempel banyak judul produk (1 per baris). Tool bakal kumpulin semua kata kunci + frekuensinya — centang yang mau dipakai, atur kata ekstra (awalan/sisipan/akhiran) & target jumlah huruf, lalu generate banyak judul baru otomatis (mirip tool riset kata kunci Shopee).</div>
 <textarea id="kw-bulk" style="width:100%;min-height:120px;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:13px;margin-bottom:10px" placeholder="Tempel judul di sini, satu judul per baris (maksimal 100)..."></textarea>
-<div><button onclick="analisaBanyakJudul()">Koreksi Banyak Judul (AI)</button></div>
+<div><button onclick="analisaBanyakJudul()">Kumpulin Kata Kunci</button></div>
 <div id="kw-bulk-hasil" style="margin-top:14px"></div>
 </section>
 <section class="card" id="promo-card">
@@ -1403,7 +1403,7 @@ function setKwMode(m) {
 kwMode = m;
 document.querySelectorAll(".kw-mode-btn").forEach((b) => { b.classList.toggle("active", b.dataset.mode === m); });
 const bulkHasil = document.getElementById("kw-bulk-hasil");
-if (bulkHasil && bulkHasil.innerHTML.trim()) analisaBanyakJudul();
+if (bulkHasil) {}
 const single = document.getElementById("kw-hasil");
 if (single && single.innerHTML.trim()) jalankanKoreksiKw();
 }
@@ -1498,7 +1498,8 @@ const j3 = gabung([brandCap, namaJenis, f1, matCap, kar1, ukr]);
 if (!judulJadi.length && judulRapi) judulJadi.push(potong(judulRapi));
 return { asli: asli, brand: brand, jenis: jenis, material: material, fitur: fitur, karakter: karakter, ukuran: ukuran, kwLuas: kwLuas, kwSpesifik: kwSpesifik, judulJadi: judulJadi, judulRapi: judulRapi };
 }
-function analisaBanyakJudul() {
+function analisaBanyakJudul() { return prosesKataKunci(); }
+function analisaBanyakJudulLama() {
 const ta = document.getElementById("kw-bulk");
 const el = document.getElementById("kw-bulk-hasil");
 if (!ta || !el) return;
@@ -1523,6 +1524,84 @@ const judulHtml = d.judulJadi.slice(0, 3).map((j, ji) => '<div style="display:fl
 return '<div style="border:1px solid #e3e3e3;border-radius:10px;padding:12px;margin-bottom:12px;background:#fff"><div style="font-size:12px;color:#888;margin-bottom:3px">Judul #' + (idx + 1) + ':</div><div style="font-size:12px;background:#f7f7f7;border-radius:6px;padding:6px 8px;margin-bottom:10px">' + d.asli + '</div><div style="font-size:12px;font-weight:700;color:#6b21a8;margin-bottom:5px">Kata kunci bagus (' + modeLbl + ')</div><div style="margin-bottom:10px">' + chips + '</div><div style="font-size:12px;font-weight:700;color:#2383e2;margin-bottom:5px">3 judul siap pakai (boleh diedit lagi)</div>' + judulHtml + '</div>';
 }).join('');
 el.innerHTML = html;
+}
+let kwAggData = [];
+function prosesKataKunci() {
+const ta = document.getElementById("kw-bulk");
+const el = document.getElementById("kw-bulk-hasil");
+if (!ta || !el) return;
+const lines = ta.value.split(/\r?\n/).map((x) => x.trim()).filter((x) => x.length > 0);
+if (!lines.length) { el.innerHTML = '<p style="color:#c1271e;font-size:13px">Belum ada judul. Tempel judul produk (1 per baris) dulu, lalu klik tombolnya.</p>'; return; }
+const bersih = (w) => w.toLowerCase().replace(/[^a-z0-9]/g, "").trim();
+const stop = ["dan", "atau", "untuk", "yang", "dengan", "di", "ke", "dari", "the", "of", "by", "ready", "stock", "cod", "new", "shopee", "penilaian", "pengembalian", "star", "voucher", "rp", "ribu", "rb", "pcs", "dm", "custom", "pilih", "terjual", "bebas", "compatible", "icon", "vehicle", "gratis", "ongkir", "10rb", "100rb"];
+const hype = ["murah", "termurah", "grosir", "promo", "best", "seller", "terlaris", "viral", "amazing", "keren"];
+const isNoise = (k) => !k || k.length < 2 || stop.indexOf(k) !== -1 || hype.indexOf(k) !== -1 || /^\d+(rb|jt|k)?$/.test(k);
+const freq = {}; const tampil = {};
+lines.forEach((line) => { line.split(/\s+/).forEach((w) => { const k = bersih(w); if (isNoise(k)) return; freq[k] = (freq[k] || 0) + 1; if (!tampil[k]) tampil[k] = k.charAt(0).toUpperCase() + k.slice(1); }); });
+kwAggData = Object.keys(freq).map((k) => ({ key: k, kata: tampil[k], frq: freq[k] })).sort((a, b) => b.frq - a.frq);
+if (!kwAggData.length) { el.innerHTML = '<p style="color:#c1271e;font-size:13px">Nggak ada kata kunci kebaca (semua kefilter). Coba judul yang lebih lengkap.</p>'; return; }
+renderKwAggregat(lines.length);
+}
+function renderKwAggregat(jumlahJudul) {
+const el = document.getElementById("kw-bulk-hasil");
+if (!el) return;
+const topDefault = Math.min(12, kwAggData.length);
+const filterList = ["simbol: + & , ( ) / - |", "angka (0-9, 10rb+, 100rb+)", "shopee", "penilaian", "pengembalian", "star", "voucher", "rp / ribu", "pcs / dm", "custom", "pilih", "terjual", "bebas", "compatible", "icon", "vehicle", "gratis / ongkir", "dan / dengan / untuk / yang"];
+let html = '';
+html += '<div style="font-size:12px;color:#888;margin-bottom:10px">Dari <strong>' + jumlahJudul + ' judul</strong> kebaca <strong>' + kwAggData.length + ' kata kunci unik</strong>. Centang yang mau dipakai (' + topDefault + ' teratas otomatis kecentang), atur kata ekstra & target, lalu klik Buat Judul.</div>';
+html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-bottom:14px">';
+html += '<div style="border:1px solid #f2c9c9;border-radius:10px;overflow:hidden"><div style="background:#fbeaea;color:#c1271e;font-weight:700;font-size:12px;padding:8px 12px">FILTER KATA (otomatis dibuang)</div><div style="padding:8px 12px;max-height:300px;overflow-y:auto;font-size:12px;line-height:1.9;color:#666">' + filterList.map((f) => '<div>' + f + '</div>').join('') + '</div></div>';
+html += '<div style="border:1px solid #d7e6f7;border-radius:10px;overflow:hidden"><div style="background:#e9f2fc;color:#2383e2;font-weight:700;font-size:12px;padding:8px 12px;display:flex;justify-content:space-between"><span>KATA KUNCI</span><span>FRQ &middot; PAKAI</span></div><div style="max-height:300px;overflow-y:auto">' + kwAggData.map((k, i) => '<label style="display:flex;align-items:center;gap:8px;padding:5px 12px;border-bottom:1px solid #f3f3f3;font-size:13px;cursor:pointer"><input type="checkbox" class="kw-agg-check" data-kata="' + k.kata + '"' + (i < topDefault ? ' checked' : '') + ' style="margin:0"><span style="flex:1">' + k.kata + '</span><span style="color:#888;font-size:12px">' + k.frq + '</span></label>').join('') + '</div></div>';
+html += '</div>';
+html += '<div style="border:1px solid #eee;border-radius:10px;padding:12px;margin-bottom:14px"><div style="font-size:12px;font-weight:700;margin-bottom:8px">Kata Ekstra (opsional, pisah pakai koma kalau lebih dari satu)</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px"><label style="font-size:12px;color:#555">Awalan (depan judul)<input id="kw-awalan" type="text" placeholder="cth: Jemuran" style="margin-top:4px"></label><label style="font-size:12px;color:#555">Sisipan (tengah)<input id="kw-sisipan" type="text" placeholder="cth: Serbaguna" style="margin-top:4px"></label><label style="font-size:12px;color:#555">Akhiran (belakang)<input id="kw-akhiran" type="text" placeholder="cth: Premium" style="margin-top:4px"></label></div></div>';
+html += '<div style="border:1px solid #eee;border-radius:10px;padding:12px;margin-bottom:14px"><div style="font-size:12px;font-weight:700;margin-bottom:8px">Atur Target</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px"><label style="font-size:12px;color:#555">Huruf Minimal<input id="kw-min" type="number" value="25" min="0" style="margin-top:4px"></label><label style="font-size:12px;color:#555">Huruf Maksimal<input id="kw-max" type="number" value="96" min="10" style="margin-top:4px"></label><label style="font-size:12px;color:#555">Jumlah Judul<input id="kw-jml" type="number" value="15" min="1" max="100" style="margin-top:4px"></label></div></div>';
+html += '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px"><button onclick="generateJudul()">Buat Judul</button><button class="ghost" onclick="generateJudul()">Acak Ulang</button></div>';
+html += '<div id="kw-judul-hasil"></div>';
+el.innerHTML = html;
+generateJudul();
+}
+function ambilListKw(id) { const v = (document.getElementById(id) || {}).value || ""; return v.split(",").map((x) => x.trim()).filter((x) => x.length > 0); }
+function capKataKw(s) { return String(s || "").split(" ").map((w) => w ? w.charAt(0).toUpperCase() + w.slice(1) : w).join(" "); }
+function bikinSatuJudul(pool, awalan, sisipan, akhiran, minH, maxH) {
+const shuffled = pool.slice();
+for (let i = shuffled.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); const t = shuffled[i]; shuffled[i] = shuffled[j]; shuffled[j] = t; }
+const used = {};
+const aw = awalan.length ? capKataKw(awalan[Math.floor(Math.random() * awalan.length)]) : "";
+const si = sisipan.length ? capKataKw(sisipan[Math.floor(Math.random() * sisipan.length)]) : "";
+const ak = akhiran.length ? capKataKw(akhiran[Math.floor(Math.random() * akhiran.length)]) : "";
+if (aw) aw.toLowerCase().split(" ").forEach((w) => used[w] = 1);
+if (si) si.toLowerCase().split(" ").forEach((w) => used[w] = 1);
+if (ak) ak.toLowerCase().split(" ").forEach((w) => used[w] = 1);
+let panjang = (aw ? aw.length + 1 : 0) + (si ? si.length + 1 : 0) + (ak ? ak.length + 1 : 0);
+const isi = [];
+for (const k of shuffled) { const kl = k.toLowerCase(); if (used[kl]) continue; const tambah = k.length + 1; if (panjang + tambah > maxH) continue; isi.push(k); used[kl] = 1; panjang += tambah; }
+if (isi.length === 0) return null;
+let kata = [];
+if (aw) kata.push(aw);
+if (si && isi.length > 1) { const mid = Math.ceil(isi.length / 2); kata = kata.concat(isi.slice(0, mid)); kata.push(si); kata = kata.concat(isi.slice(mid)); } else { kata = kata.concat(isi); if (si) kata.push(si); }
+if (ak) kata.push(ak);
+let judul = kata.join(" ").replace(/\s+/g, " ").trim();
+if (judul.length < minH) return null;
+if (judul.length > maxH) judul = judul.slice(0, maxH).trim();
+return judul;
+}
+function generateJudul() {
+const hasilEl = document.getElementById("kw-judul-hasil");
+if (!hasilEl) return;
+const pool = [];
+document.querySelectorAll(".kw-agg-check:checked").forEach((c) => pool.push(c.dataset.kata));
+if (pool.length < 2) { hasilEl.innerHTML = '<p style="color:#c1271e;font-size:13px">Centang minimal 2 kata kunci dulu ya.</p>'; return; }
+const awalan = ambilListKw("kw-awalan");
+const sisipan = ambilListKw("kw-sisipan");
+const akhiran = ambilListKw("kw-akhiran");
+let minH = parseInt((document.getElementById("kw-min") || {}).value, 10); if (isNaN(minH)) minH = 0;
+let maxH = parseInt((document.getElementById("kw-max") || {}).value, 10); if (isNaN(maxH) || maxH < 10) maxH = 96;
+let jml = parseInt((document.getElementById("kw-jml") || {}).value, 10); if (isNaN(jml) || jml < 1) jml = 15; if (jml > 100) jml = 100;
+const hasil = []; let attempt = 0; const maxAttempt = jml * 60;
+while (hasil.length < jml && attempt < maxAttempt) { attempt++; const j = bikinSatuJudul(pool, awalan, sisipan, akhiran, minH, maxH); if (j && hasil.indexOf(j) === -1) hasil.push(j); }
+if (!hasil.length) { hasilEl.innerHTML = '<p style="color:#c1271e;font-size:13px">Belum kebentuk judul yang pas target. Coba longgarin Huruf Minimal/Maksimal, kurangi kata ekstra, atau centang lebih banyak kata kunci.</p>'; return; }
+let html = '<div style="border:1px solid #c6e6cf;border-radius:10px;overflow:hidden"><div style="background:#eafaf0;color:#1a7f37;font-weight:700;font-size:12px;padding:8px 12px;display:flex;justify-content:space-between"><span>HASIL JUDUL (' + hasil.length + ')</span><span>JUMLAH HURUF</span></div><div style="max-height:440px;overflow-y:auto">' + hasil.map((j, i) => '<div style="display:flex;gap:8px;align-items:flex-start;padding:7px 12px;border-bottom:1px solid #f3f3f3"><span style="flex-shrink:0;font-size:11px;color:#888;margin-top:8px;width:20px">' + (i + 1) + '.</span><textarea readonly style="flex:1;min-height:36px;padding:6px 8px;border:1px solid #ddd;border-radius:6px;font-size:12px;font-family:inherit;background:#fff">' + j + '</textarea><span style="flex-shrink:0;font-size:12px;color:' + (j.length >= minH ? "#1a7f37" : "#c1271e") + ';font-weight:600;margin-top:10px;width:32px;text-align:right">' + j.length + '</span></div>').join('') + '</div></div>';
+hasilEl.innerHTML = html;
 }
 function analisaKataKunci(judulRaw) {
 const asli = String(judulRaw || "").trim().replace(/\s+/g, " ");
