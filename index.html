@@ -70,7 +70,7 @@
 <h2>📖 Cara Pakai Dashboard</h2>
 <p style="font-size:13px;color:#666;margin-bottom:12px">Panduan singkat biar langsung jalan. Ikutin urutan ini dari atas ke bawah. Tiap panel bisa diklik buat buka/tutup.</p>
 <ol style="font-size:13px;line-height:1.9;padding-left:18px;margin:0">
-<li><strong>Isi data produk dulu.</strong> Scroll ke <strong>➕ Tambah Produk</strong> buat input manual, atau klik <strong>⬆️ Import Produk</strong> di bawah buat upload Excel/CSV laporan tokomu. Kolom penting: Omset, Pesanan, CVR, Repeat Rate, Stok, Harga Jual.</li>
+<li><strong>Isi data produk dulu.</strong> Scroll ke <strong>➕ Tambah Produk</strong> buat input manual, atau klik <strong>⬆️ Import Produk</strong> di bawah buat upload Excel/CSV laporan tokomu. Kolom penting: Omset, Pesanan, CVR, Repeat Rate, Stok, Harga Jual, <strong>Modal/HPP</strong> (biar laba &amp; margin kehitung).</li>
 <li><strong>(Opsional) Import data iklan.</strong> Klik <strong>📣 Import Data Iklan</strong> buat masukin laporan iklan Shopee (CPC/GMV). ROAS, ACOS &amp; rekomendasi per campaign muncul otomatis.</li>
 <li><strong>Set target omset bulanan.</strong> Di panel <strong>🎯 Target Omset Bulanan</strong> (tepat di bawah), isi target lalu klik Simpan. Progress bar + setoran harian langsung kehitung.</li>
 <li><strong>Baca keputusan AI.</strong> Panel <strong>🧠 Keputusan AI Spesialis</strong> kasih skor kesehatan toko + langkah prioritas. Tiap produk dapet 1 vonis (Scale, Restock, Benahi, dll).</li>
@@ -78,7 +78,7 @@
 <li><strong>Manfaatin tool tambahan:</strong> 💎 Hidden Gems (produk potensial), 📦 Analisis ABC, 🔑 Koreksi Kata Kunci + Generator Judul SEO, 🎨 Generator Konten Promo, 🔍 Studio koreksi foto.</li>
 <li><strong>Tarik laporan.</strong> Panel <strong>📋 Laporan Mingguan</strong> bikin ringkasan siap-tempel ke WhatsApp/Slack. Tinggal klik Copy.</li>
 </ol>
-<p style="font-size:12px;color:#888;margin-top:10px">💡 Data tersimpan otomatis di browser ini (localStorage) — jangan hapus data browser kalau nggak mau kehilangan data produkmu.</p>
+<p style="font-size:12px;color:#888;margin-top:10px">💡 Data tersimpan otomatis di browser ini (localStorage). Klik <strong>💾 Backup Data</strong> di paling bawah buat nyimpen cadangan file, &amp; <strong>♻️ Restore Data</strong> buat balikin di browser/HP lain — biar nggak kehilangan data produkmu.</p>
 </section>
 <section class="card" id="target-card">
 <h2>🎯 Target Omset Bulanan</h2>
@@ -92,6 +92,11 @@
 <h2>🧠 Keputusan AI Spesialis E-commerce</h2>
 <p style="font-size:13px;color:#666;margin-bottom:12px">Analisa ala spesialis e-commerce 10 tahun pengalaman — langsung kasih keputusan & prioritas aksi dari data kamu.</p>
 <div id="ai-spesialis"></div>
+</section>
+<section class="card" id="profit-card">
+<h2>💰 Analisis Profit & Margin</h2>
+<p style="font-size:13px;color:#666;margin-bottom:12px">Omset gede belum tentu cuan. Isi kolom <strong>Modal / HPP</strong> tiap produk, nanti laba kotor, margin, &amp; laba bersih setelah iklan kehitung otomatis di sini.</p>
+<div id="profit"></div>
 </section>
 <section class="card" id="tracking-card">
 <h2>📅 Tren Antar-Minggu</h2>
@@ -228,6 +233,7 @@
         <label>Klik Iklan <input type="number" id="klik" min="0" /></label>
         <label>Tampilan Iklan <input type="number" id="tampilan" min="0" /></label>
         <label>Harga Jual (Rp) <input type="number" id="hargaJual" min="0" /></label>
+        <label>Modal / HPP (Rp) <input type="number" id="modal" min="0" placeholder="modal per unit" /></label>
         <label>Stok Tersedia <input type="number" id="stok" min="0" placeholder="sisa stok" /></label>
 <label>Link Shopee <input type="url" id="linkShopee" placeholder="https://shopee.co.id/..." /></label>
 <label>URL Foto Produk <input type="url" id="foto" placeholder="Shopee: klik kanan gambar > Copy image address" /></label>
@@ -275,6 +281,9 @@
     <button id="btn-import" class="ghost">⬆️ Import Produk</button>
     <button id="btn-import-ads" class="ghost">📣 Import Data Iklan</button>
     <button id="btn-export" class="ghost">⬇️ Export Excel</button>
+    <button id="btn-backup" class="ghost">💾 Backup Data</button>
+    <button id="btn-restore" class="ghost">♻️ Restore Data</button>
+    <input type="file" id="file-restore" accept=".json" hidden />
     <button id="btn-reset" class="ghost">🗑️ Hapus Semua Data</button>
   </footer>
 
@@ -366,6 +375,7 @@ function formatRupiah(n) {
         tampilan: num("tampilan"),
         roas: (num("biayaIklan") > 0 ? +((num("omsetIklan") / num("biayaIklan")).toFixed(2)) : 0),
         hargaJual: num("hargaJual"),
+        modal: num("modal"),
 stok: (function () { const v = document.getElementById("stok").value; return v === "" ? null : (parseInt(String(v).replace(/[^0-9-]/g, ""), 10) || 0); })(),
         linkShopee: document.getElementById("linkShopee").value.trim(),
 foto: document.getElementById("foto").value.trim(),
@@ -408,6 +418,7 @@ catatan: document.getElementById("catatan").value.trim(),
       document.getElementById("klik").value = p.klik || "";
       document.getElementById("tampilan").value = p.tampilan || "";
       document.getElementById("hargaJual").value = p.hargaJual || "";
+      document.getElementById("modal").value = p.modal || "";
 document.getElementById("stok").value = (p.stok === null || p.stok === undefined) ? "" : p.stok;
       document.getElementById("linkShopee").value = p.linkShopee || "";
 document.getElementById("foto").value = p.foto || "";
@@ -453,7 +464,7 @@ document.getElementById("catatan").value = p.catatan || "";
           "Skor Total": total, "Level": tentukanLevel(total).label,
           "Omset": p.omset, "Pesanan": p.pesanan, "CVR (%)": p.cvr, "Repeat Rate (%)": p.repeat,
           "Biaya Iklan": p.biayaIklan || 0, "Omset Iklan": p.omsetIklan || 0, "ROAS": roasNilai(p), "Klik": p.klik || 0, "Tampilan": p.tampilan || 0,
-          "Harga Jual": p.hargaJual, "Stok": (p.stok == null ? "" : p.stok), "Link Shopee": p.linkShopee || "", "Foto": p.foto || "", "Catatan": p.catatan, "Fokus Perbaikan": fokusPerbaikan(p).teks,
+          "Harga Jual": p.hargaJual, "Modal/HPP": p.modal || 0, "Margin/unit": ((p.hargaJual || 0) - (p.modal || 0)), "Margin %": ((p.hargaJual || 0) > 0 ? +(((((p.hargaJual || 0) - (p.modal || 0)) / (p.hargaJual || 0)) * 100).toFixed(1)) : 0), "Stok": (p.stok == null ? "" : p.stok), "Link Shopee": p.linkShopee || "", "Foto": p.foto || "", "Catatan": p.catatan, "Fokus Perbaikan": fokusPerbaikan(p).teks,
         };
       });
       const ws = XLSX.utils.json_to_sheet(baris);
@@ -512,6 +523,39 @@ document.getElementById("catatan").value = p.catatan || "";
       localStorage.removeItem(IKLAN_KEY);
       simpan(); render();
     });
+    // ===== Backup & Restore Data =====
+    const BACKUP_KEYS = ["produkPotensial", "iklanData", "snapshotMingguan", "targetBulanan", "temaPromo", "bgKustom", "refKustom", "warnaRef"];
+    document.getElementById("btn-backup").addEventListener("click", () => {
+      const dump = { _meta: { app: "riset-produk-dashboard", versi: 2, tanggal: new Date().toISOString() } };
+      BACKUP_KEYS.forEach((k) => { const v = localStorage.getItem(k); if (v !== null) dump[k] = v; });
+      const blob = new Blob([JSON.stringify(dump)], { type: "application/json" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      const t = new Date();
+      a.download = "backup-riset-produk-" + t.getFullYear() + String(t.getMonth() + 1).padStart(2, "0") + String(t.getDate()).padStart(2, "0") + ".json";
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(a.href), 1500);
+      alert("Backup kebuat! Simpan file JSON-nya. Kalau pindah browser/HP, tinggal Restore file ini.");
+    });
+    document.getElementById("btn-restore").addEventListener("click", () => { document.getElementById("file-restore").click(); });
+    document.getElementById("file-restore").addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        try {
+          const dump = JSON.parse(ev.target.result);
+          if (!dump || typeof dump !== "object") throw new Error("format");
+          if (!BACKUP_KEYS.some((k) => dump[k] !== undefined)) { alert("File ini kayaknya bukan backup dashboard ini. Restore dibatalin."); e.target.value = ""; return; }
+          if (!confirm("Restore bakal NIMPA semua data sekarang dengan isi backup. Lanjut?")) { e.target.value = ""; return; }
+          BACKUP_KEYS.forEach((k) => { if (dump[k] !== undefined && dump[k] !== null) localStorage.setItem(k, dump[k]); });
+          alert("Restore berhasil! Halaman bakal di-reload.");
+          location.reload();
+        } catch (err) { alert("Gagal baca file backup. Pastikan itu file JSON hasil tombol Backup."); }
+        e.target.value = "";
+      };
+      reader.readAsText(file);
+    });
     document.getElementById("file-import").addEventListener("change", (e) => {
       const file = e.target.files[0];
       if (!file) return;
@@ -543,6 +587,7 @@ document.getElementById("catatan").value = p.catatan || "";
             cvr: angkaDesimal(ambilKolom(r, ["CVR", "CVR (%)", "Tingkat Konversi", "Conversion Rate", "Conversion", ["tingkat", "konversi"], ["conversion"]])),
             repeat: angkaDesimal(ambilKolom(r, ["Repeat Rate", "Repeat Rate (%)", "Tingkat Pembelian Ulang", "Repeat", ["pembelian", "ulang"]])),
             hargaJual: angkaInt(ambilKolom(r, ["Harga Jual", "Harga", "Price"])),
+            modal: angkaInt(ambilKolom(r, ["Modal", "HPP", "Harga Modal", "Cost", "COGS", "Harga Beli"])),
 stok: (function () { const v = ambilKolom(r, ["Stok", "Stock", "Sisa Stok", "Jumlah Stok", "Stok Tersedia", "Persediaan", "Stok Produk", ["stok"], ["stock"]]); return (v === "" || v === null || v === undefined) ? null : angkaInt(v); })(),
             linkShopee: String(ambilKolom(r, ["Link Shopee", "Link Produk", "Link", "URL Produk", "URL", "Tautan", ["link"], ["url"]]) || ""),
 foto: String(ambilKolom(r, ["Foto", "URL Foto", "Foto Produk", "Gambar", "Image", "Image URL", ["foto"], ["gambar"], ["image"]]) || ""),
@@ -551,7 +596,7 @@ catatan: String(ambilKolom(r, ["Catatan", "Notes"]) || ""),
           const ada = produkList.find((p) => normNama(p.nama) === normNama(d.nama));
           if (ada) {
             if (d.kategori && d.kategori !== "Fashion") ada.kategori = d.kategori;
-            ["permintaan", "kompetisi", "tren", "omset", "pesanan", "cvr", "repeat", "hargaJual"].forEach((k) => { if (d[k]) ada[k] = d[k]; });
+            ["permintaan", "kompetisi", "tren", "omset", "pesanan", "cvr", "repeat", "hargaJual", "modal"].forEach((k) => { if (d[k]) ada[k] = d[k]; });
             if (d.stok != null) { ada.stok = d.stok; nStok++; }
             if (d.linkShopee) ada.linkShopee = d.linkShopee;
 if (d.foto) ada.foto = d.foto;
@@ -676,6 +721,7 @@ if (d.catatan) ada.catatan = d.catatan;
   renderTracking();
   renderCharts();
   renderAiSpesialis();
+  renderProfit();
   renderTarget();
   renderABC();
   renderEvaluasi();
@@ -953,6 +999,50 @@ function renderCharts() {
     if (chartRoas) chartRoas.destroy();
     chartRoas = new Chart(document.getElementById("chart-roas"), { type: "bar", data: { labels: topC.map((c) => c.nama.length > 18 ? c.nama.slice(0, 18) + "..." : c.nama), datasets: [{ label: "ROAS", data: topC.map((c) => +roasOf(c).toFixed(2)), backgroundColor: topC.map((c) => roasOf(c) >= 4 ? "#1a7f37" : roasOf(c) >= 2 ? "#e0a800" : "#c1271e") }] }, options: { indexAxis: "y", plugins: { legend: { display: false } } } });
   }
+}
+function renderProfit() {
+  const el = document.getElementById("profit");
+  if (!el) return;
+  const withModal = produkList.filter((p) => (p.modal || 0) > 0 && (p.hargaJual || 0) > 0);
+  if (withModal.length === 0) {
+    el.innerHTML = '<p style="color:#999">Belum ada data modal. Isi kolom <strong>Modal / HPP</strong> di form Tambah/Edit Produk (atau kolom "Modal"/"HPP" pas import Excel), nanti laba kotor, margin, & laba bersih muncul otomatis di sini.</p>';
+    return;
+  }
+  let labaKotor = 0, totalAds = 0, totalOmsetModal = 0;
+  const perProduk = withModal.map((p) => {
+    const unit = (p.pesanan || 0) > 0 ? p.pesanan : ((p.hargaJual || 0) > 0 ? Math.round((p.omset || 0) / p.hargaJual) : 0);
+    const marginUnit = (p.hargaJual || 0) - (p.modal || 0);
+    const marginPct = (p.hargaJual || 0) > 0 ? (marginUnit / p.hargaJual) * 100 : 0;
+    const laba = marginUnit * unit;
+    const ads = p.biayaIklan || 0;
+    labaKotor += laba; totalAds += ads; totalOmsetModal += (p.omset || 0);
+    return { p: p, unit: unit, marginUnit: marginUnit, marginPct: marginPct, laba: laba, labaBersih: laba - ads };
+  });
+  const labaBersih = labaKotor - totalAds;
+  const blended = totalOmsetModal > 0 ? (labaKotor / totalOmsetModal) * 100 : 0;
+  const rugi = perProduk.filter((x) => x.marginUnit < 0);
+  const tipis = perProduk.filter((x) => x.marginUnit >= 0 && x.marginPct < 15);
+  const warnaNet = labaBersih >= 0 ? "#1a7f37" : "#c1271e";
+  const box = (lbl, val, sub, warna) => '<div class="stat-box"><div class="lbl">' + lbl + '</div><div class="num" style="font-size:18px' + (warna ? ';color:' + warna : '') + '">' + val + '</div>' + (sub ? '<div class="sub">' + sub + '</div>' : '') + '</div>';
+  let html = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px">';
+  html += box("Laba Kotor", formatRupiah(labaKotor), "dari " + withModal.length + " produk ber-modal", "#1a7f37");
+  html += box("Biaya Iklan", formatRupiah(totalAds), "total spend iklan", "#9a6700");
+  html += box("Laba Bersih (est.)", (labaBersih < 0 ? "-" : "") + formatRupiah(Math.abs(labaBersih)), "laba kotor - iklan", warnaNet);
+  html += box("Margin Rata-rata", blended.toFixed(1) + "%", "blended margin", blended >= 15 ? "#1a7f37" : "#9a6700");
+  html += '</div>';
+  let diag;
+  if (labaBersih < 0) diag = "⚠️ Setelah dipotong biaya iklan, hasilnya <strong>rugi " + formatRupiah(Math.abs(labaBersih)) + "</strong>. Benahi produk margin tipis/rugi & campaign boncos sebelum nambah budget.";
+  else if (blended < 15) diag = "Margin rata-rata <strong>" + blended.toFixed(1) + "%</strong> masih tipis. Hati-hati gas iklan — sedikit kenaikan biaya bisa bikin rugi. Naikin harga atau tekan HPP di produk margin tipis.";
+  else diag = "Margin rata-rata <strong>" + blended.toFixed(1) + "%</strong> tergolong sehat. Ada ruang buat scale iklan — prioritasin produk margin tebal + volume tinggi.";
+  html += '<div style="background:#fff;border-left:4px solid ' + warnaNet + ';padding:10px 14px;margin-bottom:16px;font-size:13px;line-height:1.6">' + diag + '</div>';
+  if (rugi.length > 0) html += '<div style="border-left:4px solid #c1271e;background:#fff5f5;padding:10px 14px;margin-bottom:10px;border-radius:0 8px 8px 0"><strong style="color:#c1271e">🔴 Jual rugi (' + rugi.length + ')</strong> — harga jual di bawah modal. Naikin harga atau setop jual.<ul style="margin:6px 0 0 18px;font-size:12px;line-height:1.7">' + rugi.slice(0, 6).map((x) => '<li>' + x.p.nama + ' — rugi ' + formatRupiah(Math.abs(x.marginUnit)) + '/unit (jual ' + formatRupiah(x.p.hargaJual) + ', modal ' + formatRupiah(x.p.modal) + ')</li>').join("") + '</ul></div>';
+  if (tipis.length > 0) html += '<div style="border-left:4px solid #9a6700;background:#fffbeb;padding:10px 14px;margin-bottom:10px;border-radius:0 8px 8px 0"><strong style="color:#9a6700">🟡 Margin tipis < 15% (' + tipis.length + ')</strong> — rawan boncos kalau diiklanin. Pertimbangin naikin harga / bundling.<ul style="margin:6px 0 0 18px;font-size:12px;line-height:1.7">' + tipis.slice(0, 6).map((x) => '<li>' + x.p.nama + ' — margin ' + x.marginPct.toFixed(1) + '% (' + formatRupiah(x.marginUnit) + '/unit)</li>').join("") + '</ul></div>';
+  const sorted = perProduk.slice().sort((a, b) => b.laba - a.laba);
+  html += '<h3 style="font-size:14px;margin:16px 0 8px">Profit per Produk (' + perProduk.length + ')</h3>';
+  html += '<div style="max-height:360px;overflow-y:auto;border:1px solid #eee;border-radius:8px"><table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr><th style="text-align:left;padding:7px 8px;border-bottom:1px solid #eee">Produk</th><th style="text-align:right;padding:7px 8px;border-bottom:1px solid #eee">Jual</th><th style="text-align:right;padding:7px 8px;border-bottom:1px solid #eee">Modal</th><th style="text-align:right;padding:7px 8px;border-bottom:1px solid #eee">Margin</th><th style="text-align:right;padding:7px 8px;border-bottom:1px solid #eee">Est. Laba</th></tr></thead><tbody>';
+  html += sorted.map((x) => { const p = x.p; const wm = x.marginUnit < 0 ? "#c1271e" : x.marginPct < 15 ? "#9a6700" : "#1a7f37"; return '<tr><td style="padding:7px 8px;border-bottom:1px solid #f3f3f3">' + (p.nama || "") + '</td><td style="padding:7px 8px;border-bottom:1px solid #f3f3f3;text-align:right">' + formatRupiah(p.hargaJual) + '</td><td style="padding:7px 8px;border-bottom:1px solid #f3f3f3;text-align:right">' + formatRupiah(p.modal) + '</td><td style="padding:7px 8px;border-bottom:1px solid #f3f3f3;text-align:right;color:' + wm + ';font-weight:600">' + x.marginPct.toFixed(0) + '%</td><td style="padding:7px 8px;border-bottom:1px solid #f3f3f3;text-align:right">' + formatRupiah(x.laba) + '</td></tr>'; }).join("");
+  html += '</tbody></table></div>';
+  el.innerHTML = html;
 }
 function renderAiSpesialis() {
   const el = document.getElementById("ai-spesialis");
