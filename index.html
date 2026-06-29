@@ -51,6 +51,7 @@
     .row-actions button.del { color: #c1271e; }
     .empty { text-align: center; color: #9ca3af; padding: 20px; }
     footer { text-align: center; padding: 10px 0 30px; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.batch-hidden { display: none !important; }
 .card.collapsed .card-body { display: none; }
 .card.collapsed h2 { margin-bottom: 0; }
 .acc-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
@@ -78,7 +79,7 @@
     <div id="batch-nav" style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap"></div>
   </section>
 
-  <section class="stats" id="stats"></section>
+  <section class="stats" id="stats" data-nav-title="📊 Ringkasan"></section>
 <section class="card" id="tutorial-card">
 <h2>📖 Cara Pakai Dashboard</h2>
 <p style="font-size:13px;color:#666;margin-bottom:12px">Panduan singkat biar langsung jalan. Ikutin urutan ini dari atas ke bawah. Tiap panel bisa diklik buat buka/tutup.</p>
@@ -296,7 +297,7 @@
     </select>
   </section>
 
-  <section class="filters" id="filters">
+  <section class="filters" id="filters" data-batch-group="produk-list">
     <button data-filter="all" class="active">Semua</button>
     <button data-filter="high">🟢 High</button>
     <button data-filter="mid">🟡 Mid</button>
@@ -314,7 +315,7 @@
     <p id="kosong" class="empty" hidden>Belum ada produk. Tambah manual di atas atau klik Import Excel 👆</p>
   </section>
 
-  <footer>
+  <footer id="footer-actions" data-batch-group="produk-list">
     <input type="file" id="file-import" accept=".xlsx,.xls,.csv" hidden />
     <input type="file" id="file-import-ads" accept=".xlsx,.xls,.csv" hidden />
     <button id="btn-import" class="ghost">⬆️ Import Produk</button>
@@ -2104,24 +2105,76 @@ function setupAccordion() {
   });
 }
 
-function bukaPanel(panelId) {
-  // tutup semua panel card kecuali nav
+function tandaiBatchPanels() {
+  var formTitle = document.getElementById("form-title");
+  var formCard = formTitle ? formTitle.closest("section.card") : null;
+  if (formCard) {
+    formCard.id = "form-card";
+    formCard.dataset.navTitle = "➕ Tambah Produk";
+  }
+
+  var toolbar = document.querySelector("section.toolbar");
+  if (toolbar) {
+    toolbar.id = "produk-list-toolbar";
+    toolbar.dataset.batchGroup = "produk-list";
+    toolbar.dataset.navTitle = "📋 Data Produk";
+  }
+
+  var tabel = document.getElementById("tabel");
+  var tabelCard = tabel ? tabel.closest("section.card") : null;
+  if (tabelCard) {
+    tabelCard.id = "produk-list-card";
+    tabelCard.dataset.batchGroup = "produk-list";
+  }
+
   document.querySelectorAll("section.card").forEach(function (card) {
     if (card.id === "batch-nav-card") return;
-    if (card.id === panelId) card.classList.remove("collapsed");
-    else card.classList.add("collapsed");
+    card.setAttribute("data-batch-panel", "1");
+    if (!card.dataset.batchGroup && card.id) card.dataset.batchGroup = card.id;
   });
 
-  // scroll ke panel (halus)
-  var el = document.getElementById(panelId);
-  if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  ["stats", "produk-list-toolbar", "filters", "footer-actions"].forEach(function (id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.setAttribute("data-batch-panel", "1");
+    if (!el.dataset.batchGroup && el.id) el.dataset.batchGroup = el.id;
+  });
+}
 
-  // resize chart kalau ada
+function tutupSemuaBatch() {
+  document.querySelectorAll('[data-batch-panel="1"]').forEach(function (el) {
+    el.classList.add("batch-hidden");
+    if (el.classList.contains("card")) el.classList.add("collapsed");
+  });
+}
+
+function syncBatchNavActive(group) {
+  document.querySelectorAll("#batch-nav button[data-group]").forEach(function (btn) {
+    var aktif = btn.dataset.group === group;
+    btn.style.background = aktif ? "#4f46e5" : "#f1f5f9";
+    btn.style.color = aktif ? "#ffffff" : "#475569";
+    btn.style.borderColor = aktif ? "#4f46e5" : "#e2e8f0";
+  });
+}
+
+function bukaPanel(panelId) {
+  var el = document.getElementById(panelId);
+  if (!el) return;
+  var targetGroup = el.dataset.batchGroup || panelId;
+
+  document.querySelectorAll('[data-batch-panel="1"]').forEach(function (item) {
+    var sameGroup = (item.dataset.batchGroup || item.id) === targetGroup;
+    item.classList.toggle("batch-hidden", !sameGroup);
+    if (item.classList.contains("card")) item.classList.toggle("collapsed", !sameGroup);
+  });
+
+  syncBatchNavActive(targetGroup);
+
+  el.scrollIntoView({ behavior: "smooth", block: "start" });
+
   setTimeout(function () {
     if (!window.Chart) return;
-    var card = document.getElementById(panelId);
-    if (!card) return;
-    card.querySelectorAll("canvas").forEach(function (cv) {
+    document.querySelectorAll('[data-batch-panel="1"]:not(.batch-hidden) canvas').forEach(function (cv) {
       var ch = (Chart.getChart) ? Chart.getChart(cv) : null;
       if (ch) ch.resize();
     });
@@ -2132,23 +2185,28 @@ function setupBatchNav() {
   var nav = document.getElementById("batch-nav");
   if (!nav) return;
 
-  var cards = Array.prototype.slice.call(document.querySelectorAll("section.card"))
-    .filter(function (c) { return c.id && c.id !== "batch-nav-card"; });
+  tandaiBatchPanels();
+  tutupSemuaBatch();
 
-  // label singkat dari emoji+judul h2
-  var items = cards.map(function (c) {
-    var h2 = c.querySelector("h2");
-    var t = (h2 ? h2.textContent : c.id).trim();
-    t = t.replace(/\s+/g, " ");
-    return { id: c.id, title: t };
+  var rawPanels = Array.prototype.slice.call(document.querySelectorAll('[data-batch-panel="1"]'));
+  var seenGroups = {};
+  var items = [];
+
+  rawPanels.forEach(function (el) {
+    var group = el.dataset.batchGroup || el.id;
+    if (!group || seenGroups[group]) return;
+    seenGroups[group] = 1;
+    var h2 = el.querySelector ? el.querySelector("h2") : null;
+    var title = (el.dataset.navTitle || (h2 ? h2.textContent : el.id) || "").trim().replace(/\s+/g, " ");
+    items.push({ id: el.id, group: group, title: title });
   });
 
-  // build buttons
   nav.innerHTML = "";
   items.forEach(function (it) {
     var b = document.createElement("button");
     b.type = "button";
     b.className = "ghost";
+    b.dataset.group = it.group;
     b.style.cssText = "font-size:12px;padding:7px 10px;border-radius:999px";
     b.textContent = it.title.length > 22 ? (it.title.slice(0, 22) + "…") : it.title;
     b.title = it.title;
@@ -2156,20 +2214,19 @@ function setupBatchNav() {
     nav.appendChild(b);
   });
 
-  var idx = 0;
+  var idx = -1;
   function openByIndex(i) {
+    if (!items.length) return;
     idx = Math.max(0, Math.min(items.length - 1, i));
     bukaPanel(items[idx].id);
   }
 
   var prevBtn = document.getElementById("btn-prev-panel");
   var nextBtn = document.getElementById("btn-next-panel");
-  if (prevBtn) prevBtn.onclick = function () { openByIndex(idx - 1); };
-  if (nextBtn) nextBtn.onclick = function () { openByIndex(idx + 1); };
+  if (prevBtn) prevBtn.onclick = function () { openByIndex(idx < 0 ? items.length - 1 : idx - 1); };
+  if (nextBtn) nextBtn.onclick = function () { openByIndex(idx < 0 ? 0 : idx + 1); };
 
-  // default: buka panel pertama setelah stats (biar gak bingung)
-  var prefer = items.findIndex(function (x) { return x.id === "tutorial-card"; });
-  openByIndex(prefer >= 0 ? prefer : 0);
+  syncBatchNavActive("");
 }
 
 setupAccordion();
