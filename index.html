@@ -9,13 +9,13 @@
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Rajdhani:wght@500;600;700&display=swap');
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: "Rajdhani", system-ui, -apple-system, "Segoe UI", sans-serif; background-color: #060814; background-image: radial-gradient(circle at 12% -10%, rgba(255,0,170,0.18), transparent 45%), radial-gradient(circle at 92% 0%, rgba(0,224,255,0.18), transparent 45%), linear-gradient(rgba(0,224,255,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(0,224,255,0.06) 1px, transparent 1px); background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px; background-attachment: fixed; color: #1a2233; padding: 24px; max-width: 1200px; margin: 0 auto; min-height: 100vh; }
-    header { text-align: center; margin-bottom: 30px; }
-    header h1 { font-family: "Orbitron", sans-serif; font-size: 30px; font-weight: 900; letter-spacing: 3px; text-transform: uppercase; color: #eafcff; text-shadow: 0 0 6px #00e0ff, 0 0 18px rgba(0,224,255,0.7), 0 0 34px rgba(255,0,170,0.4); }
+    body { font-family: "Rajdhani", system-ui, -apple-system, "Segoe UI", sans-serif; background-color: #060814; background-image: radial-gradient(circle at 12% -10%, rgba(255,0,170,0.18), transparent 45%), radial-gradient(circle at 92% 0%, rgba(0,224,255,0.18), transparent 45%), linear-gradient(rgba(0,224,255,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(0,224,255,0.06) 1px, transparent 1px); background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px; background-attachment: fixed; color: #1a2233; padding: 14px; max-width: 1200px; margin: 0 auto; min-height: 100vh; }
+    header { text-align: center; margin-bottom: 16px; }
+    header h1 { font-family: "Orbitron", sans-serif; font-size: 24px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; color: #eafcff; text-shadow: 0 0 6px #00e0ff, 0 0 18px rgba(0,224,255,0.7), 0 0 34px rgba(255,0,170,0.4); }
     header p { color: #8be6ff; margin-top: 8px; letter-spacing: 2px; font-size: 13px; text-transform: uppercase; }
-    .card { background: #ffffff; border: 1px solid rgba(0,224,255,0.45); border-radius: 12px; padding: 20px; box-shadow: 0 0 16px rgba(0,224,255,0.28); margin-bottom: 20px; position: relative; }
+    .card { background: #ffffff; border: 1px solid rgba(0,224,255,0.45); border-radius: 10px; padding: 12px 16px; box-shadow: 0 0 16px rgba(0,224,255,0.28); margin-bottom: 10px; position: relative; }
     .card::before { content: ""; position: absolute; top: -1px; left: 18px; right: 18px; height: 2px; background: linear-gradient(90deg, transparent, #00e0ff, #ff00aa, transparent); border-radius: 2px; }
-    h2 { font-family: "Orbitron", sans-serif; font-size: 17px; font-weight: 700; letter-spacing: 1px; margin-bottom: 16px; color: #0a1f3c; }
+    h2 { font-family: "Orbitron", sans-serif; font-size: 15px; font-weight: 700; letter-spacing: 1px; margin-bottom: 10px; color: #0a1f3c; }
     .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
     label { display: flex; flex-direction: column; font-size: 13px; color: #4a5a72; gap: 4px; font-weight: 600; }
     input, select { padding: 8px 10px; border: 1px solid #cfe3ff; border-radius: 8px; font-size: 14px; font-family: inherit; background: #f7fbff; color: #16203a; }
@@ -25,9 +25,9 @@
     button:hover { transform: translateY(-1px); box-shadow: 0 0 18px rgba(106,0,255,0.6); opacity: 1; }
     button.ghost { background: rgba(0,224,255,0.08); color: #0077a3; border: 1px solid rgba(0,184,212,0.5); box-shadow: none; }
     button.ghost:hover { background: rgba(0,224,255,0.18); box-shadow: 0 0 12px rgba(0,224,255,0.35); }
-    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
-    .stat-box { background: #ffffff; border: 1px solid rgba(106,0,255,0.35); border-radius: 12px; padding: 16px; box-shadow: 0 0 14px rgba(106,0,255,0.18); }
-    .stat-box .num { font-family: "Orbitron", sans-serif; font-size: 23px; font-weight: 800; color: #6a00ff; text-shadow: 0 0 10px rgba(106,0,255,0.25); }
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 12px; }
+    .stat-box { background: #ffffff; border: 1px solid rgba(106,0,255,0.35); border-radius: 10px; padding: 11px 13px; box-shadow: 0 0 14px rgba(106,0,255,0.18); }
+    .stat-box .num { font-family: "Orbitron", sans-serif; font-size: 19px; font-weight: 800; color: #6a00ff; text-shadow: 0 0 10px rgba(106,0,255,0.25); }
     .stat-box .lbl { font-size: 12px; color: #5a6b85; margin-bottom: 4px; text-transform: uppercase; letter-spacing: .5px; }
     .stat-box .sub { font-size: 11px; color: #7a8aa3; margin-top: 4px; }
     .toolbar { display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
@@ -38,7 +38,7 @@
 .kw-mode-btn { background: rgba(0,224,255,0.08); color: #0077a3; border: 1px solid rgba(0,184,212,0.5); box-shadow: none; }
 .kw-mode-btn.active { background: linear-gradient(135deg, #00e0ff, #6a00ff); color: #fff; box-shadow: 0 0 12px rgba(0,224,255,0.45); }
     table { width: 100%; border-collapse: collapse; font-size: 13px; }
-    th, td { text-align: left; padding: 9px 8px; border-bottom: 1px solid #e6eefc; vertical-align: top; }
+    th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #e6eefc; vertical-align: top; }
     th { font-size: 11px; text-transform: uppercase; color: #6a00ff; letter-spacing: .5px; }
     .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; white-space: nowrap; }
     .level-high { background: #d6f5dd; color: #1a7f37; }
