@@ -31,6 +31,8 @@
     .filters { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
     .filters button { background: #eee; color: #333; }
     .filters button.active { background: #2383e2; color: #fff; }
+.kw-mode-btn { background: #eee; color: #333; }
+.kw-mode-btn.active { background: #2383e2; color: #fff; }
     table { width: 100%; border-collapse: collapse; font-size: 13px; }
     th, td { text-align: left; padding: 9px 8px; border-bottom: 1px solid #eee; vertical-align: top; }
     th { font-size: 11px; text-transform: uppercase; color: #888; }
@@ -155,12 +157,19 @@
 <section class="card" id="keyword-card">
 <h2>🔑 Koreksi Kata Kunci (Judul Produk)</h2>
 <p style="font-size:13px;color:#666;margin-bottom:12px">AI nganalisa judul produk kamu: deteksi kata kunci yang dobel/keyword stuffing, kasih versi judul yang lebih rapi & SEO-friendly buat Shopee, plus saran kata kunci tambahan. Pilih produk atau tempel judul manual.</p>
+<div style="margin-bottom:14px"><div style="font-size:12px;color:#888;margin-bottom:6px">Mau kata kunci yang gimana?</div><div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="kw-mode-btn" data-mode="luas" onclick="setKwMode('luas')">Luas</button><button type="button" class="kw-mode-btn active" data-mode="campur" onclick="setKwMode('campur')">Campur</button><button type="button" class="kw-mode-btn" data-mode="spesifik" onclick="setKwMode('spesifik')">Spesifik</button></div><div style="font-size:11px;color:#999;margin-top:5px">Luas = jangkauan gede, saingan ketat. Spesifik = pencari lebih dikit tapi niat beli. Campur = dua-duanya.</div></div>
 <div style="font-size:12px;color:#888;margin-bottom:6px">Pilih produk (judulnya keisi otomatis):</div>
 <select id="kw-produk" style="padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-size:14px;width:100%;max-width:480px;margin-bottom:10px" onchange="isiJudulKw()"></select>
 <div style="font-size:12px;color:#888;margin-bottom:6px">Judul produk (boleh diedit / tempel manual):</div>
 <textarea id="kw-judul" style="width:100%;min-height:70px;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:13px;margin-bottom:10px" placeholder="contoh: Royalstar Mangkok Dinosaurus Stainless Mangkok Serbaguna - Mangkok Karakter Mangkok Fashion (luas)"></textarea>
 <div><button onclick="jalankanKoreksiKw()">Koreksi Kata Kunci (AI)</button></div>
 <div id="kw-hasil" style="margin-top:14px"></div>
+<hr style="border:none;border-top:1px solid #eee;margin:18px 0" />
+<div style="font-size:14px;font-weight:700;margin-bottom:6px">Koreksi Banyak Judul Sekaligus</div>
+<div style="font-size:12px;color:#888;margin-bottom:6px">Tempel banyak judul produk (1 judul per baris, maksimal 100). AI bakal cari kata kunci bagus + kasih 3 judul siap pakai buat tiap baris, ngikut mode di atas.</div>
+<textarea id="kw-bulk" style="width:100%;min-height:120px;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:13px;margin-bottom:10px" placeholder="Tempel judul di sini, satu judul per baris (maksimal 100)..."></textarea>
+<div><button onclick="analisaBanyakJudul()">Koreksi Banyak Judul (AI)</button></div>
+<div id="kw-bulk-hasil" style="margin-top:14px"></div>
 </section>
 <section class="card" id="promo-card">
     <h2>🎨 Generator Konten Promo</h2>
@@ -1389,6 +1398,15 @@ btn.textContent = "⬇️ Download Hero Banner";
 btn.onclick = () => unduhCanvas(canvas, "hero-banner.png");
 el.appendChild(btn);
 }
+let kwMode = "campur";
+function setKwMode(m) {
+kwMode = m;
+document.querySelectorAll(".kw-mode-btn").forEach((b) => { b.classList.toggle("active", b.dataset.mode === m); });
+const bulkHasil = document.getElementById("kw-bulk-hasil");
+if (bulkHasil && bulkHasil.innerHTML.trim()) analisaBanyakJudul();
+const single = document.getElementById("kw-hasil");
+if (single && single.innerHTML.trim()) jalankanKoreksiKw();
+}
 function renderKwSelect() {
 const sel = document.getElementById("kw-produk");
 if (!sel) return;
@@ -1411,6 +1429,99 @@ const ta = document.getElementById("kw-judul");
 const el = document.getElementById("kw-hasil");
 if (!ta || !el) return;
 el.innerHTML = analisaKataKunci(ta.value);
+}
+function ekstrakKwData(judulRaw) {
+const asli = String(judulRaw || "").trim().replace(/\s+/g, " ");
+if (!asli) return null;
+const cap = (s) => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+const capAll = (s) => String(s || "").split(" ").map(cap).join(" ");
+const bersih = (w) => w.toLowerCase().replace(/[^a-z0-9]/g, "").trim();
+const stop = ["dan", "atau", "untuk", "yang", "dengan", "di", "ke", "dari", "the", "of", "by", "ready", "stock", "cod", "new"];
+const hype = ["murah", "termurah", "grosir", "promo", "best", "seller", "terlaris", "viral", "amazing", "keren"];
+const materialKeys = ["stainless", "plastik", "kayu", "keramik", "silikon", "silicon", "kaca", "besi", "aluminium", "alumunium", "karet", "kain", "kulit", "akrilik", "baja"];
+const fiturKeys = ["serbaguna", "portable", "lipat", "anti", "tahan", "otomatis", "mini", "multifungsi", "praktis", "waterproof", "rechargeable", "wireless", "nirkabel"];
+const fraseKeys = ["anti tumpah", "anti bocor", "anti karat", "anti slip", "anti air", "anti panas", "tahan panas dingin", "tahan panas", "tahan lama", "tahan air", "food grade", "bpa free", "multifungsi", "serbaguna"];
+const ukuranKeys = ["mini", "kecil", "sedang", "besar", "jumbo", "luas", "xl", "large", "small", "cm", "ml", "liter", "inch", "family"];
+const produkUmum = ["mangkok", "gelas", "piring", "sendok", "garpu", "pisau", "botol", "tas", "sepatu", "baju", "celana", "kaos", "jaket", "jam", "lampu", "kabel", "casing", "case", "tumbler", "termos", "dispenser", "toples", "wadah", "rak", "keranjang"];
+const tokens = asli.split(" ");
+const low = asli.toLowerCase();
+const lowTokens = low.split(/[^a-z0-9]+/);
+const freq = {};
+tokens.forEach((w) => { const k = bersih(w); if (k && k.length > 1) freq[k] = (freq[k] || 0) + 1; });
+const ulang = Object.keys(freq).filter((k) => freq[k] > 1 && stop.indexOf(k) === -1).sort((a, b) => freq[b] - freq[a]);
+const seen = {}; const kept = [];
+tokens.forEach((w) => { const k = bersih(w); if (!k) return; if (seen[k]) return; seen[k] = 1; kept.push(w.replace(/[()]/g, "")); });
+const judulRapi = kept.join(" ").replace(/\s+/g, " ").trim();
+const material = materialKeys.find((m) => low.indexOf(m) !== -1) || "";
+const fitur = [];
+fraseKeys.forEach((f) => { if (low.indexOf(f) !== -1 && !fitur.some((x) => x.indexOf(f) !== -1 || f.indexOf(x) !== -1)) fitur.push(f); });
+fiturKeys.forEach((f) => { if (lowTokens.indexOf(f) !== -1 && !fitur.some((x) => x.split(" ").indexOf(f) !== -1)) fitur.push(f); });
+const ukuran = ukuranKeys.filter((u) => lowTokens.indexOf(u) !== -1);
+const w0 = tokens[0] ? bersih(tokens[0]) : "";
+let brand = "";
+if (w0 && produkUmum.indexOf(w0) === -1 && materialKeys.indexOf(w0) === -1 && /^[A-Z]/.test(tokens[0])) brand = tokens[0].replace(/[()]/g, "");
+let jenis = "";
+for (let i = 0; i < tokens.length; i++) { const k = bersih(tokens[i]); if (produkUmum.indexOf(k) !== -1) { jenis = k; break; } }
+if (!jenis) jenis = ulang[0] || (kept[1] ? bersih(kept[1]) : "");
+const dipakai = {};
+[brand, jenis, material].forEach((x) => { if (x) dipakai[bersih(x)] = 1; });
+fitur.forEach((f) => f.split(" ").forEach((w) => dipakai[w] = 1)); ukuran.forEach((u) => dipakai[u] = 1); stop.forEach((s) => dipakai[s] = 1); hype.forEach((h) => dipakai[h] = 1);
+const karakter = [];
+kept.forEach((w) => { const k = bersih(w); if (k && k.length > 2 && !dipakai[k] && karakter.indexOf(k) === -1) karakter.push(k); });
+const kwLuas = [], kwSpesifik = [];
+const pushU = (arr, kw) => { if (!kw) return; const nk = kw.toLowerCase().replace(/\s+/g, " ").trim(); if (nk && !arr.some((x) => x.toLowerCase() === nk)) arr.push(kw); };
+if (jenis) pushU(kwLuas, cap(jenis));
+if (brand && jenis) pushU(kwLuas, capAll(brand) + " " + cap(jenis));
+if (jenis && material) pushU(kwLuas, cap(jenis) + " " + cap(material));
+if (jenis && fitur[0]) pushU(kwSpesifik, cap(jenis) + " " + capAll(fitur[0]));
+if (jenis && fitur[1]) pushU(kwSpesifik, cap(jenis) + " " + capAll(fitur[1]));
+if (jenis && karakter[0]) pushU(kwSpesifik, cap(jenis) + " " + cap(karakter[0]));
+if (jenis && ukuran[0]) pushU(kwSpesifik, cap(jenis) + " " + cap(ukuran[0]));
+if (jenis && material && fitur[0]) pushU(kwSpesifik, cap(jenis) + " " + cap(material) + " " + capAll(fitur[0]));
+const namaJenis = cap(jenis) || (kept[0] ? cap(bersih(kept[0])) : "Produk");
+const brandCap = brand ? capAll(brand) : "";
+const matCap = material ? cap(material) : "";
+const f1 = fitur[0] ? capAll(fitur[0]) : "";
+const f2 = fitur[1] ? capAll(fitur[1]) : "";
+const kar1 = karakter[0] ? cap(karakter[0]) : "";
+const kar2 = karakter[1] ? cap(karakter[1]) : "";
+const ukr = ukuran[0] ? ("Ukuran " + cap(ukuran[0])) : "";
+const gabung = (arr) => arr.filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
+const potong = (s) => s.length > 100 ? s.slice(0, 100).trim() : s;
+const judulJadi = [];
+const j1 = gabung([brandCap, namaJenis, matCap, kar1, kar2]);
+const ekorSpes = gabung([namaJenis, f1, f2, ukr]);
+const j2 = gabung([brandCap, namaJenis, matCap, kar1]) + (ekorSpes && (f1 || f2 || ukr) ? " - " + ekorSpes : "");
+const j3 = gabung([brandCap, namaJenis, f1, matCap, kar1, ukr]);
+[j1, j2, j3].forEach((j) => { const v = potong(String(j).replace(/\s+/g, " ").trim()); if (v && judulJadi.indexOf(v) === -1) judulJadi.push(v); });
+if (!judulJadi.length && judulRapi) judulJadi.push(potong(judulRapi));
+return { asli: asli, brand: brand, jenis: jenis, material: material, fitur: fitur, karakter: karakter, ukuran: ukuran, kwLuas: kwLuas, kwSpesifik: kwSpesifik, judulJadi: judulJadi, judulRapi: judulRapi };
+}
+function analisaBanyakJudul() {
+const ta = document.getElementById("kw-bulk");
+const el = document.getElementById("kw-bulk-hasil");
+if (!ta || !el) return;
+const lines = ta.value.split(/\r?\n/).map((x) => x.trim()).filter((x) => x.length > 0);
+if (!lines.length) { el.innerHTML = '<p style="color:#c1271e;font-size:13px">Belum ada judul. Tempel judul produk (1 judul per baris), lalu klik tombolnya.</p>'; return; }
+const maksimal = 100;
+const dipakai = lines.slice(0, maksimal);
+const mode = kwMode;
+const modeLbl = mode === "luas" ? "Luas" : mode === "spesifik" ? "Spesifik" : "Campur";
+let html = '<div style="font-size:12px;color:#888;margin-bottom:10px">Diproses ' + dipakai.length + ' judul' + (lines.length > maksimal ? ' (dibatasi ' + maksimal + ' dari ' + lines.length + ')' : '') + '. Mode: <strong>' + modeLbl + '</strong>.</div>';
+html += dipakai.map((line, idx) => {
+const d = ekstrakKwData(line);
+if (!d) return '';
+let kws;
+if (mode === "luas") kws = d.kwLuas.slice();
+else if (mode === "spesifik") kws = d.kwSpesifik.slice();
+else kws = d.kwLuas.concat(d.kwSpesifik);
+const uniq = [];
+kws.forEach((k) => { if (k && uniq.indexOf(k) === -1) uniq.push(k); });
+const chips = uniq.length ? uniq.map((k) => '<span style="font-size:12px;background:#f3eaff;border-radius:20px;padding:3px 10px;display:inline-block;margin:2px 4px 2px 0">' + k + '</span>').join('') : '<span style="font-size:12px;color:#999">- kata kunci kurang kedeteksi, judulnya kurang spesifik -</span>';
+const judulHtml = d.judulJadi.slice(0, 3).map((j, ji) => '<div style="display:flex;gap:6px;align-items:flex-start;margin-bottom:6px"><span style="flex-shrink:0;font-size:11px;color:#888;margin-top:8px">' + (ji + 1) + '.</span><textarea style="flex:1;min-height:40px;padding:6px 8px;border:1px solid #ddd;border-radius:6px;font-size:12px;font-family:inherit">' + j + '</textarea></div>').join('');
+return '<div style="border:1px solid #e3e3e3;border-radius:10px;padding:12px;margin-bottom:12px;background:#fff"><div style="font-size:12px;color:#888;margin-bottom:3px">Judul #' + (idx + 1) + ':</div><div style="font-size:12px;background:#f7f7f7;border-radius:6px;padding:6px 8px;margin-bottom:10px">' + d.asli + '</div><div style="font-size:12px;font-weight:700;color:#6b21a8;margin-bottom:5px">Kata kunci bagus (' + modeLbl + ')</div><div style="margin-bottom:10px">' + chips + '</div><div style="font-size:12px;font-weight:700;color:#2383e2;margin-bottom:5px">3 judul siap pakai (boleh diedit lagi)</div>' + judulHtml + '</div>';
+}).join('');
+el.innerHTML = html;
 }
 function analisaKataKunci(judulRaw) {
 const asli = String(judulRaw || "").trim().replace(/\s+/g, " ");
@@ -1507,10 +1618,11 @@ html += '<div style="font-size:13px;background:#fff;border:1px solid #eee;border
 html += '<div style="margin-bottom:12px"><div style="font-size:12px;font-weight:700;color:#c1271e;margin-bottom:6px">Masalah yang kedeteksi</div>' + (masalah.length ? '<ul style="margin:0 0 0 16px;font-size:13px;line-height:1.7;color:#333">' + masalah.map((x) => '<li>' + x + '</li>').join('') + '</ul>' : '<p style="font-size:13px;color:#1a7f37">Mantap, nggak ada masalah berarti.</p>') + '</div>';
 html += '<div style="margin-bottom:12px"><div style="font-size:12px;font-weight:700;color:#1a7f37;margin-bottom:6px">Versi rapi (buang kata dobel)</div><div style="font-size:13px;background:#eafaf0;border:1px solid #b6e3c6;border-radius:6px;padding:8px">' + judulRapi + '</div></div>';
 html += '<div style="margin-bottom:12px"><div style="font-size:12px;font-weight:700;color:#2383e2;margin-bottom:6px">Saran judul terstruktur (AI)</div><div style="font-size:13px;background:#eef5ff;border:1px solid #bcd9f7;border-radius:6px;padding:8px">' + saranJudul + '</div><div style="font-size:11px;color:#888;margin-top:4px">Pola: Brand + Jenis + Bahan + Varian - Jenis + Fitur + Ukuran. Sesuaikan kalau ada bagian yang kurang pas.</div></div>';
-if (kwSaran.length) {
+const kwTampil = kwMode === "luas" ? kwSaran.filter((k) => k.tipe.indexOf("Luas") !== -1) : kwMode === "spesifik" ? kwSaran.filter((k) => k.tipe.indexOf("Spesifik") !== -1) : kwSaran;
+if (kwTampil.length) {
 html += '<div style="margin-top:2px"><div style="font-size:12px;font-weight:700;color:#6b21a8;margin-bottom:4px">Saran kata kunci + alasannya</div>';
 html += '<div style="font-size:11px;color:#888;margin-bottom:8px;line-height:1.5"><strong>Luas</strong> = jangkauan gede tapi saingan ketat. <strong>Spesifik</strong> = yang nyari lebih dikit tapi lebih niat beli & saingan sepi. Campur dua-duanya: beberapa luas buat jangkauan, sisanya spesifik buat closing.</div>';
-html += kwSaran.map((k) => { const luas = k.tipe.indexOf("Luas") !== -1; const wr = luas ? "#2383e2" : "#6b21a8"; return '<div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:7px"><span style="flex-shrink:0;font-size:10px;font-weight:700;color:#fff;background:' + wr + ';padding:2px 9px;border-radius:20px;margin-top:2px">' + k.tipe + '</span><div><div style="font-size:13px;font-weight:600">' + k.kw + '</div><div style="font-size:11px;color:#777;line-height:1.5">' + k.alasan + '</div></div></div>'; }).join('');
+html += kwTampil.map((k) => { const luas = k.tipe.indexOf("Luas") !== -1; const wr = luas ? "#2383e2" : "#6b21a8"; return '<div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:7px"><span style="flex-shrink:0;font-size:10px;font-weight:700;color:#fff;background:' + wr + ';padding:2px 9px;border-radius:20px;margin-top:2px">' + k.tipe + '</span><div><div style="font-size:13px;font-weight:600">' + k.kw + '</div><div style="font-size:11px;color:#777;line-height:1.5">' + k.alasan + '</div></div></div>'; }).join('');
 html += '</div>';
 }
 html += '</div>';
