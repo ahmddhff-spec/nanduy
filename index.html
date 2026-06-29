@@ -65,6 +65,19 @@
     <p>Dashboard analisis produk e-commerce — Level High / Mid / Low otomatis</p>
   </header>
 
+  <!-- Quick batch nav (biar gak perlu scroll) -->
+  <section class="card" id="batch-nav-card" style="position:sticky;top:10px;z-index:99;padding:12px 14px">
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <div style="font-weight:800;color:#111827">🧭 Navigasi Panel</div>
+      <div style="font-size:12px;color:#6b7280">Klik buat buka 1 panel aja (yang lain auto ketutup).</div>
+      <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="ghost" id="btn-prev-panel" type="button">◀ Prev</button>
+        <button class="ghost" id="btn-next-panel" type="button">Next ▶</button>
+      </div>
+    </div>
+    <div id="batch-nav" style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap"></div>
+  </section>
+
   <section class="stats" id="stats"></section>
 <section class="card" id="tutorial-card">
 <h2>📖 Cara Pakai Dashboard</h2>
@@ -2065,8 +2078,102 @@ html += '</div>';
     render();
   </script>
 <script>
-function setupAccordion() { document.querySelectorAll("section.card").forEach(function (card) { var h = card.querySelector("h2"); if (!h || card.dataset.acc) return; card.dataset.acc = "1"; var body = document.createElement("div"); body.className = "card-body"; var n = h.nextSibling; while (n) { var next = n.nextSibling; body.appendChild(n); n = next; } card.appendChild(body); h.classList.add("acc-head"); h.style.cursor = "pointer"; h.insertAdjacentHTML("beforeend", "<span class=\"acc-ico\">▸</span>"); card.classList.add("collapsed"); h.addEventListener("click", function () { card.classList.toggle("collapsed"); if (!card.classList.contains("collapsed")) { card.querySelectorAll("canvas").forEach(function (cv) { var ch = (window.Chart && Chart.getChart) ? Chart.getChart(cv) : null; if (ch) ch.resize(); }); } }); }); }
+function setupAccordion() {
+  document.querySelectorAll("section.card").forEach(function (card) {
+    var h = card.querySelector("h2");
+    if (!h || card.dataset.acc) return;
+    card.dataset.acc = "1";
+    var body = document.createElement("div");
+    body.className = "card-body";
+    var n = h.nextSibling;
+    while (n) { var next = n.nextSibling; body.appendChild(n); n = next; }
+    card.appendChild(body);
+    h.classList.add("acc-head");
+    h.style.cursor = "pointer";
+    h.insertAdjacentHTML("beforeend", "<span class=\"acc-ico\">▸</span>");
+    card.classList.add("collapsed");
+    h.addEventListener("click", function () {
+      card.classList.toggle("collapsed");
+      if (!card.classList.contains("collapsed")) {
+        card.querySelectorAll("canvas").forEach(function (cv) {
+          var ch = (window.Chart && Chart.getChart) ? Chart.getChart(cv) : null;
+          if (ch) ch.resize();
+        });
+      }
+    });
+  });
+}
+
+function bukaPanel(panelId) {
+  // tutup semua panel card kecuali nav
+  document.querySelectorAll("section.card").forEach(function (card) {
+    if (card.id === "batch-nav-card") return;
+    if (card.id === panelId) card.classList.remove("collapsed");
+    else card.classList.add("collapsed");
+  });
+
+  // scroll ke panel (halus)
+  var el = document.getElementById(panelId);
+  if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+
+  // resize chart kalau ada
+  setTimeout(function () {
+    if (!window.Chart) return;
+    var card = document.getElementById(panelId);
+    if (!card) return;
+    card.querySelectorAll("canvas").forEach(function (cv) {
+      var ch = (Chart.getChart) ? Chart.getChart(cv) : null;
+      if (ch) ch.resize();
+    });
+  }, 250);
+}
+
+function setupBatchNav() {
+  var nav = document.getElementById("batch-nav");
+  if (!nav) return;
+
+  var cards = Array.prototype.slice.call(document.querySelectorAll("section.card"))
+    .filter(function (c) { return c.id && c.id !== "batch-nav-card"; });
+
+  // label singkat dari emoji+judul h2
+  var items = cards.map(function (c) {
+    var h2 = c.querySelector("h2");
+    var t = (h2 ? h2.textContent : c.id).trim();
+    t = t.replace(/\s+/g, " ");
+    return { id: c.id, title: t };
+  });
+
+  // build buttons
+  nav.innerHTML = "";
+  items.forEach(function (it) {
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "ghost";
+    b.style.cssText = "font-size:12px;padding:7px 10px;border-radius:999px";
+    b.textContent = it.title.length > 22 ? (it.title.slice(0, 22) + "…") : it.title;
+    b.title = it.title;
+    b.addEventListener("click", function () { bukaPanel(it.id); });
+    nav.appendChild(b);
+  });
+
+  var idx = 0;
+  function openByIndex(i) {
+    idx = Math.max(0, Math.min(items.length - 1, i));
+    bukaPanel(items[idx].id);
+  }
+
+  var prevBtn = document.getElementById("btn-prev-panel");
+  var nextBtn = document.getElementById("btn-next-panel");
+  if (prevBtn) prevBtn.onclick = function () { openByIndex(idx - 1); };
+  if (nextBtn) nextBtn.onclick = function () { openByIndex(idx + 1); };
+
+  // default: buka panel pertama setelah stats (biar gak bingung)
+  var prefer = items.findIndex(function (x) { return x.id === "tutorial-card"; });
+  openByIndex(prefer >= 0 ? prefer : 0);
+}
+
 setupAccordion();
+setupBatchNav();
 </script>
 </body>
 </html>
