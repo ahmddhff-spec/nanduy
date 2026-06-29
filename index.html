@@ -1636,7 +1636,43 @@ const catatan = (broadPool.length && specPool.length) ? "Tiap judul gabungin kat
 seoHtml = '<div style="border:1px solid #d6bcfa;border-radius:10px;overflow:hidden;margin-bottom:14px"><div style="background:linear-gradient(90deg,#eef5ff,#f3eaff);color:#6b21a8;font-weight:700;font-size:12px;padding:8px 12px;display:flex;justify-content:space-between"><span>POTENSI JUDUL SEO (Luas + Spesifik)</span><span>JUMLAH HURUF</span></div><div style="padding:4px 0">' + seoTitles.map((j, i) => '<div style="display:flex;gap:8px;align-items:flex-start;padding:7px 12px;border-bottom:1px solid #f3f3f3"><span style="flex-shrink:0;font-size:11px;color:#888;margin-top:8px;width:20px">' + (i + 1) + '.</span><textarea readonly style="flex:1;min-height:36px;padding:6px 8px;border:1px solid #ddd;border-radius:6px;font-size:12px;font-family:inherit;background:#fff">' + j + '</textarea><span style="flex-shrink:0;font-size:12px;color:' + (j.length >= minH ? "#1a7f37" : "#c1271e") + ';font-weight:600;margin-top:10px;width:32px;text-align:right">' + j.length + '</span></div>').join('') + '</div><div style="font-size:11px;color:#777;padding:6px 12px 10px">' + catatan + '</div></div>';
 }
 let html = '<div style="border:1px solid #c6e6cf;border-radius:10px;overflow:hidden"><div style="background:#eafaf0;color:#1a7f37;font-weight:700;font-size:12px;padding:8px 12px;display:flex;justify-content:space-between"><span>HASIL JUDUL (' + hasil.length + ')</span><span>JUMLAH HURUF</span></div><div style="max-height:440px;overflow-y:auto">' + hasil.map((j, i) => '<div style="display:flex;gap:8px;align-items:flex-start;padding:7px 12px;border-bottom:1px solid #f3f3f3"><span style="flex-shrink:0;font-size:11px;color:#888;margin-top:8px;width:20px">' + (i + 1) + '.</span><textarea readonly style="flex:1;min-height:36px;padding:6px 8px;border:1px solid #ddd;border-radius:6px;font-size:12px;font-family:inherit;background:#fff">' + j + '</textarea><span style="flex-shrink:0;font-size:12px;color:' + (j.length >= minH ? "#1a7f37" : "#c1271e") + ';font-weight:600;margin-top:10px;width:32px;text-align:right">' + j.length + '</span></div>').join('') + '</div></div>';
-hasilEl.innerHTML = seoHtml + html;
+function skorJudulShopee(judul, bSet, sSet, minH, maxH) {
+const len = judul.length;
+const kata = judul.toLowerCase().split(/\s+/);
+const seen = {}; let nBroad = 0, nSpec = 0, nDup = 0;
+kata.forEach((w) => { const k = w.replace(/[^a-z0-9]/g, ""); if (!k) return; if (seen[k]) { nDup++; return; } seen[k] = 1; if (bSet[k]) nBroad++; else if (sSet[k]) nSpec++; });
+let skor = 0;
+if (len >= 50 && len <= 80) skor += 30; else if (len >= 40 && len <= 95) skor += 20; else if (len >= minH && len <= maxH) skor += 10; else skor += 2;
+if (nBroad === 1 || nBroad === 2) skor += 24; else if (nBroad >= 3) skor += 12;
+if (nSpec >= 3 && nSpec <= 6) skor += 30; else if (nSpec === 2) skor += 22; else if (nSpec === 1) skor += 12;
+const tot = nBroad + nSpec;
+if (tot >= 6) skor += 16; else skor += Math.round(tot * 2.5);
+skor -= nDup * 12;
+skor = Math.max(5, Math.min(100, Math.round(skor)));
+let alasan;
+if (nBroad >= 1 && nSpec >= 3 && len >= 50 && len <= 80 && nDup === 0) alasan = "Komposisi ideal: dibuka kata kunci luas buat jangkauan, diisi kata spesifik buat nyaring pembeli yang niat beli, panjang pas slot Shopee, tanpa kata dobel.";
+else { const kk = []; if (nBroad < 1) kk.push("kurang kata kunci luas di depan"); if (nSpec < 3) kk.push("kata spesifiknya masih sedikit"); if (len < 50) kk.push("agak pendek, slot judul belum kepakai penuh"); if (len > 80) kk.push("agak panjang, ekornya rawan kepotong"); if (nDup > 0) kk.push("ada kata dobel"); alasan = "Udah oke, tapi " + (kk.join(", ") || "masih bisa dioptimalin") + "."; }
+return { judul: judul, skor: skor, nBroad: nBroad, nSpec: nSpec, nDup: nDup, len: len, alasan: alasan };
+}
+const bSet = {}; const sSet = {};
+broadPool.forEach((k) => { bSet[String(k).toLowerCase()] = 1; });
+specPool.forEach((k) => { sSet[String(k).toLowerCase()] = 1; });
+const candPool = [];
+let aB = 0; const maxB = 900;
+while (candPool.length < 80 && aB < maxB) { aB++; const cj = bikinSatuJudulSEO(broadPool.length ? broadPool : pool, specPool.length ? specPool : broadPool, awalan, sisipan, akhiran, minH, maxH); if (cj && candPool.indexOf(cj) === -1) candPool.push(cj); }
+seoTitles.forEach((t) => { if (candPool.indexOf(t) === -1) candPool.push(t); });
+hasil.forEach((t) => { if (candPool.indexOf(t) === -1) candPool.push(t); });
+const skored = candPool.map((t) => skorJudulShopee(t, bSet, sSet, minH, maxH)).sort((a, b) => (b.skor - a.skor) || (b.nSpec - a.nSpec));
+const terbaik = skored.slice(0, 2);
+let bestHtml = "";
+if (terbaik.length) {
+bestHtml = '<div style="border:2px solid #1a7f37;border-radius:12px;overflow:hidden;margin-bottom:16px">';
+bestHtml += '<div style="background:linear-gradient(90deg,#eafaf0,#e9f2fc);color:#1a7f37;font-weight:800;font-size:13px;padding:10px 14px">JUDUL TERBAIK PILIHAN AI - rasio Luas + Spesifik paling oke</div>';
+bestHtml += '<div style="padding:4px 0">' + terbaik.map((t, i) => '<div style="padding:12px 14px;border-bottom:1px solid #f0f0f0"><div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:8px"><span style="flex-shrink:0;font-size:13px;font-weight:800;color:#1a7f37;background:#d6f5dd;border-radius:8px;padding:4px 10px">#' + (i + 1) + '</span><textarea readonly style="flex:1;min-height:44px;padding:8px 10px;border:1px solid #b6e3c6;border-radius:8px;font-size:13px;font-family:inherit;background:#fff;font-weight:600">' + t.judul + '</textarea></div><div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px;font-size:11px"><span style="background:#eafaf0;color:#1a7f37;font-weight:700;border-radius:20px;padding:2px 10px">Skor SEO ' + t.skor + '/100</span><span style="background:#e9f2fc;color:#2383e2;font-weight:700;border-radius:20px;padding:2px 10px">' + t.nBroad + ' Luas</span><span style="background:#f3eaff;color:#6b21a8;font-weight:700;border-radius:20px;padding:2px 10px">' + t.nSpec + ' Spesifik</span><span style="background:#f4f5f7;color:#666;font-weight:700;border-radius:20px;padding:2px 10px">' + t.len + ' huruf</span></div><div style="font-size:12px;color:#555;line-height:1.6"><strong>Kenapa ini:</strong> ' + t.alasan + '</div></div>').join('') + '</div>';
+bestHtml += '<div style="font-size:11px;color:#777;padding:8px 14px;background:#fafdfb">Diseleksi otomatis dari ratusan kombinasi, diranking ala spesialis SEO Shopee: komposisi kata kunci luas + spesifik, panjang optimal, tanpa kata dobel. Pakai yang #1, sisanya buat cadangan / A-B test.</div>';
+bestHtml += '</div>';
+}
+hasilEl.innerHTML = bestHtml + seoHtml + html;
 }
 function analisaKataKunci(judulRaw) {
 const asli = String(judulRaw || "").trim().replace(/\s+/g, " ");
