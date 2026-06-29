@@ -45,6 +45,11 @@
     .row-actions button.del { color: #c1271e; }
     .empty { text-align: center; color: #999; padding: 20px; }
     footer { text-align: center; }
+.card.collapsed .card-body { display: none; }
+.card.collapsed h2 { margin-bottom: 0; }
+.acc-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.acc-ico { font-size: 13px; color: #aaa; transition: transform .2s; }
+.card:not(.collapsed) .acc-ico { transform: rotate(90deg); }
     @media (max-width: 800px) { .stats { grid-template-columns: repeat(2, 1fr); } table { font-size: 11px; } }
   </style>
 </head>
@@ -127,7 +132,7 @@
 
   <section class="card" id="studio-card">
 <h2>🔍 Studio — Koreksi Gambar & Selling Point</h2>
-<p style="font-size:13px;color:#666;margin-bottom:12px">Upload foto produk (boleh + gambar referensi sebagai pembanding), pilih produk, lalu klik <strong>Koreksi & Saran Gambar</strong>. AI bakal kasih: <strong>selling point berbasis fungsi/manfaat</strong> (bukan kesan mewah) + <strong>koreksi foto</strong> biar lebih jualan. Tombol generate gambar tetap ada kalau mau coba, tapi fokus utamanya sekarang di koreksi & saran.</p>
+<p style="font-size:13px;color:#666;margin-bottom:12px">Upload foto produk (boleh + gambar referensi sebagai pembanding), pilih produk, lalu klik <strong>Koreksi & Saran Gambar</strong>. AI bakal kasih: <strong>selling point berbasis fungsi/manfaat</strong> (bukan kesan mewah) + <strong>koreksi foto</strong> biar lebih jualan.</p>
 <div style="font-size:12px;color:#888;margin-bottom:6px">1. Upload foto produk (yang diambil cuma gambar produknya — paling bagus foto background putih/polos. Opsional kalau produk sudah punya URL foto):</div>
 <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
 <button class="ghost" onclick="document.getElementById('file-bg').click()">🖼️ Upload Foto Produk</button>
@@ -144,8 +149,18 @@
 <div id="studio-ref-status"></div>
 <div style="font-size:12px;color:#888;margin:12px 0 6px">3. Pilih produk:</div>
 <select id="studio-produk" style="padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-size:14px;width:100%;max-width:420px;margin-bottom:12px"></select>
-<div style="display:flex;gap:10px;flex-wrap:wrap"><button onclick="koreksiGambar()">🔍 Koreksi & Saran Gambar</button><button class="ghost" onclick="generateGambarProduk()">🎨 Tetap Generate (eksperimen)</button></div>
+<div><button onclick="koreksiGambar()">🔍 Koreksi & Saran Gambar</button></div>
 <div id="studio-preview" style="margin-top:14px"></div>
+</section>
+<section class="card" id="keyword-card">
+<h2>🔑 Koreksi Kata Kunci (Judul Produk)</h2>
+<p style="font-size:13px;color:#666;margin-bottom:12px">AI nganalisa judul produk kamu: deteksi kata kunci yang dobel/keyword stuffing, kasih versi judul yang lebih rapi & SEO-friendly buat Shopee, plus saran kata kunci tambahan. Pilih produk atau tempel judul manual.</p>
+<div style="font-size:12px;color:#888;margin-bottom:6px">Pilih produk (judulnya keisi otomatis):</div>
+<select id="kw-produk" style="padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-size:14px;width:100%;max-width:480px;margin-bottom:10px" onchange="isiJudulKw()"></select>
+<div style="font-size:12px;color:#888;margin-bottom:6px">Judul produk (boleh diedit / tempel manual):</div>
+<textarea id="kw-judul" style="width:100%;min-height:70px;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:13px;margin-bottom:10px" placeholder="contoh: Royalstar Mangkok Dinosaurus Stainless Mangkok Serbaguna - Mangkok Karakter Mangkok Fashion (luas)"></textarea>
+<div><button onclick="jalankanKoreksiKw()">Koreksi Kata Kunci (AI)</button></div>
+<div id="kw-hasil" style="margin-top:14px"></div>
 </section>
 <section class="card" id="promo-card">
     <h2>🎨 Generator Konten Promo</h2>
@@ -639,6 +654,7 @@ if (d.catatan) ada.catatan = d.catatan;
   renderEvaluasi();
   renderForecast();
 renderStudio();
+renderKwSelect();
     }
 
     function renderAnalisis() {
@@ -674,7 +690,24 @@ renderStudio();
         '</div>';
     }
 
-    function renderHiddenGems() {
+    let gemsSeed = 1;
+function refreshGems() { gemsSeed = Date.now(); renderHiddenGems(); }
+function rngFrom(seed) { let s = Math.abs(Math.floor(seed)) % 2147483647; if (s <= 0) s = 1; return function () { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; }; }
+function pilihGems(arr, n) {
+if (arr.length <= n) return arr.slice();
+const rand = rngFrom(gemsSeed);
+const pool = arr.slice();
+const out = [];
+while (out.length < n && pool.length) {
+let totalW = 0; for (let i = 0; i < pool.length; i++) totalW += (pool[i].skor || 0.0001);
+let r = rand() * totalW, idx = 0;
+for (let i = 0; i < pool.length; i++) { r -= (pool[i].skor || 0.0001); if (r <= 0) { idx = i; break; } }
+out.push(pool.splice(idx, 1)[0]);
+}
+out.sort((a, b) => b.skor - a.skor);
+return out;
+}
+function renderHiddenGems() {
       const el = document.getElementById("gems");
       if (produkList.length < 2) { el.innerHTML = '<p style="color:#999">Butuh lebih banyak data buat deteksi hidden gems.</p>'; return; }
       hitungStatMetrik();
@@ -690,11 +723,15 @@ renderStudio();
           qNorm = persentil(p.pesanan || 0, statMetrik.pesanan); sinyal = "pesanan";
         }
         return { p: p, skor: qNorm * (1 - pOmset), qNorm: qNorm, pOmset: pOmset, sinyal: sinyal };
-      }).filter((g) => stokSiap(g.p) && g.qNorm >= 0.7 && g.pOmset <= 0.4 && g.skor > 0);
+      }).filter((g) => stokSiap(g.p) && g.qNorm >= 0.55 && g.pOmset <= 0.55 && g.skor > 0);
       gems.sort((a, b) => b.skor - a.skor);
-      const top = gems.slice(0, 6);
+      const maxSkor = gems.length ? gems[0].skor : 1;
+gems.forEach((g) => { g.potensi = Math.max(1, Math.min(99, Math.round((g.skor / (maxSkor || 1)) * 100))); });
+const top = pilihGems(gems, 6);
       if (top.length === 0) { el.innerHTML = '<p style="color:#999">Belum ada hidden gem yang <strong>benar-benar potensial</strong> saat ini (kriteria ketat: sinyal sangat kuat + omset masih kecil + stok tersedia). Lengkapi data CVR/Repeat & kolom Stok biar deteksinya makin akurat.</p>'; return; }
-      el.innerHTML = top.map((g) => {
+      const totalKandidat = gems.length;
+const rasio = produkList.length ? Math.round(totalKandidat / produkList.length * 100) : 0;
+el.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px"><span style="font-size:12px;color:#888">Nampilin ' + top.length + ' dari ' + totalKandidat + ' produk potensial (≈' + rasio + '% dari ' + produkList.length + ' produk). Klik acak ulang biar produk lain dapat giliran muncul.</span><button class="ghost" style="font-size:12px" onclick="refreshGems()">Acak Ulang</button></div>' + top.map((g) => {
         const p = g.p;
         let alasan;
         if (g.sinyal === "cvr") alasan = "CVR tinggi (" + (p.cvr || 0) + "%) tapi omset masih kecil — banyak yang beli pas lihat, tinggal gas iklan/exposure.";
@@ -702,7 +739,8 @@ renderStudio();
         else alasan = "Permintaan lumayan (" + (p.pesanan || 0).toLocaleString("id-ID") + " pesanan) tapi omset masih kecil — dorong exposure / pertimbangkan naikin harga.";
         return '<div style="border-left:3px solid #8b5cf6;padding:8px 12px;margin-bottom:10px;background:#faf8ff;border-radius:0 8px 8px 0">' +
           (p.foto ? '<img src="' + p.foto + '" style="width:34px;height:34px;object-fit:cover;border-radius:5px;float:left;margin-right:8px" onerror="this.style.display=\'none\'">' : '') + '<strong>' + (p.linkShopee ? '<a href="' + p.linkShopee + '" target="_blank" rel="noopener" style="color:#6b21a8">' + p.nama + ' ↗</a>' : p.nama) + '</strong> <span style="color:#888;font-size:12px">· ' + p.kategori + ' · Omset ' + formatRupiah(p.omset || 0) + (p.stok != null ? ' · Stok ' + p.stok : '') + '</span>' +
-          '<div style="font-size:12px;color:#6b21a8;margin-top:3px">' + alasan + '</div>' +
+          '<div style="background:#ece4ff;border-radius:6px;height:6px;margin:6px 0 4px;overflow:hidden"><div style="width:' + g.potensi + '%;height:100%;background:#8b5cf6"></div></div>' +
+'<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><div style="font-size:12px;color:#6b21a8">' + alasan + '</div><div style="font-weight:800;color:#6b21a8;font-size:15px;flex-shrink:0">' + g.potensi + '% <span style="font-size:10px;color:#999;font-weight:400">potensi</span></div></div>' +
         '</div>';
       }).join("");
     }
@@ -1351,6 +1389,114 @@ btn.textContent = "⬇️ Download Hero Banner";
 btn.onclick = () => unduhCanvas(canvas, "hero-banner.png");
 el.appendChild(btn);
 }
+function renderKwSelect() {
+const sel = document.getElementById("kw-produk");
+if (!sel) return;
+const cur = sel.value;
+const tops = produkList.slice().sort((a, b) => (b.omset || 0) - (a.omset || 0));
+sel.innerHTML = "";
+const o0 = document.createElement("option"); o0.value = ""; o0.textContent = tops.length ? "— pilih produk —" : "(belum ada produk)"; sel.appendChild(o0);
+tops.forEach((p) => { const o = document.createElement("option"); o.value = p.id; o.textContent = p.nama || "Tanpa nama"; sel.appendChild(o); });
+if (cur) sel.value = cur;
+}
+function isiJudulKw() {
+const sel = document.getElementById("kw-produk");
+const ta = document.getElementById("kw-judul");
+if (!sel || !ta) return;
+const p = produkList.find((x) => String(x.id) === String(sel.value));
+if (p) ta.value = p.nama || "";
+}
+function jalankanKoreksiKw() {
+const ta = document.getElementById("kw-judul");
+const el = document.getElementById("kw-hasil");
+if (!ta || !el) return;
+el.innerHTML = analisaKataKunci(ta.value);
+}
+function analisaKataKunci(judulRaw) {
+const asli = String(judulRaw || "").trim().replace(/\s+/g, " ");
+if (!asli) return '<p style="color:#c1271e;font-size:13px">Judul masih kosong. Pilih produk atau tempel judul dulu, lalu klik Koreksi Kata Kunci.</p>';
+const cap = (s) => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+const bersih = (w) => w.toLowerCase().replace(/[^a-z0-9]/g, "").trim();
+const stop = ["dan", "atau", "untuk", "yang", "dengan", "di", "ke", "dari", "the", "of", "by", "ready", "stock", "cod", "new"];
+const hype = ["murah", "termurah", "grosir", "promo", "best", "seller", "terlaris", "viral", "amazing", "keren"];
+const materialKeys = ["stainless", "plastik", "kayu", "keramik", "silikon", "silicon", "kaca", "besi", "aluminium", "alumunium", "karet", "kain", "kulit", "akrilik", "baja"];
+const fiturKeys = ["serbaguna", "portable", "lipat", "anti", "tahan", "otomatis", "mini", "multifungsi", "praktis", "waterproof", "rechargeable", "wireless", "nirkabel"];
+const ukuranKeys = ["mini", "kecil", "sedang", "besar", "jumbo", "luas", "xl", "large", "small", "cm", "ml", "liter", "inch", "family"];
+const produkUmum = ["mangkok", "gelas", "piring", "sendok", "garpu", "pisau", "botol", "tas", "sepatu", "baju", "celana", "kaos", "jaket", "jam", "lampu", "kabel", "casing", "case", "tumbler", "termos", "dispenser", "toples", "wadah", "rak", "keranjang"];
+const tokens = asli.split(" ");
+const low = asli.toLowerCase();
+const lowTokens = low.split(/[^a-z0-9]+/);
+const freq = {};
+tokens.forEach((w) => { const k = bersih(w); if (k && k.length > 1) freq[k] = (freq[k] || 0) + 1; });
+const ulang = Object.keys(freq).filter((k) => freq[k] > 1 && stop.indexOf(k) === -1).sort((a, b) => freq[b] - freq[a]);
+const seen = {}; const kept = [];
+tokens.forEach((w) => { const k = bersih(w); if (!k) return; if (seen[k]) return; seen[k] = 1; kept.push(w.replace(/[()]/g, "")); });
+const judulRapi = kept.join(" ").replace(/\s+/g, " ").trim();
+const material = materialKeys.find((m) => low.indexOf(m) !== -1) || "";
+const fitur = fiturKeys.filter((f) => low.indexOf(f) !== -1);
+const ukuran = ukuranKeys.filter((u) => lowTokens.indexOf(u) !== -1);
+const w0 = tokens[0] ? bersih(tokens[0]) : "";
+let brand = "";
+if (w0 && produkUmum.indexOf(w0) === -1 && materialKeys.indexOf(w0) === -1 && /^[A-Z]/.test(tokens[0])) brand = tokens[0].replace(/[()]/g, "");
+let jenis = "";
+for (let i = 0; i < tokens.length; i++) { const k = bersih(tokens[i]); if (produkUmum.indexOf(k) !== -1) { jenis = k; break; } }
+if (!jenis) jenis = ulang[0] || (kept[1] ? bersih(kept[1]) : "");
+const dipakai = {};
+[brand, jenis, material].forEach((x) => { if (x) dipakai[bersih(x)] = 1; });
+fitur.forEach((f) => dipakai[f] = 1); ukuran.forEach((u) => dipakai[u] = 1); stop.forEach((s) => dipakai[s] = 1); hype.forEach((h) => dipakai[h] = 1);
+const karakter = [];
+kept.forEach((w) => { const k = bersih(w); if (k && k.length > 2 && !dipakai[k] && karakter.indexOf(k) === -1) karakter.push(k); });
+const inti = [];
+if (brand) inti.push(cap(brand));
+if (jenis) inti.push(cap(jenis));
+if (material) inti.push(cap(material));
+karakter.slice(0, 2).forEach((k) => inti.push(cap(k)));
+const ekor = [];
+if (jenis) ekor.push(cap(jenis));
+fitur.slice(0, 2).forEach((f) => ekor.push(cap(f)));
+if (ukuran.length) ekor.push("Ukuran " + cap(ukuran[0]));
+let saranJudul = (inti.join(" ") + (ekor.length ? " - " + ekor.join(" ") : "")).replace(/\s+/g, " ").trim();
+if (saranJudul.length > 100) saranJudul = saranJudul.slice(0, 100).trim();
+const masalah = [];
+if (ulang.length) masalah.push("Ada kata yang diulang (keyword stuffing): " + ulang.map((k) => k + " (" + freq[k] + "x)").join(", ") + ". Shopee nggak suka pengulangan berlebih — cukup 1x.");
+const adaHype = hype.filter((h) => low.indexOf(h) !== -1);
+if (adaHype.length) masalah.push("Ada kata jualan berlebih (" + adaHype.join(", ") + ") yang nggak nambah pencarian. Ganti sama kata kunci spesifik.");
+if (!brand) masalah.push("Belum kelihatan nama brand di depan. Taruh brand/merek di awal judul biar lebih kredibel & gampang dicari.");
+if (!material && jenis) masalah.push("Belum ada keyword bahan/material (mis. stainless, plastik). Tambahin kalau relevan, pembeli sering nyari pakai bahan.");
+if (asli.length > 100) masalah.push("Judul kepanjangan (" + asli.length + " huruf). Shopee maksimal sekitar 100 huruf — rapikan biar nggak kepotong.");
+if (asli.length < 25) masalah.push("Judul kependekan (" + asli.length + " huruf). Tambahin kata kunci relevan biar muncul di lebih banyak pencarian.");
+if (tokens.length >= 3 && !karakter.length && !material) masalah.push("Kurang kata kunci pembeda (varian/kegunaan). Tambahin biar beda dari kompetitor.");
+let skor = 100;
+skor -= ulang.length * 12;
+skor -= adaHype.length * 6;
+if (!brand) skor -= 12;
+if (!material && jenis) skor -= 8;
+if (asli.length > 100) skor -= 10;
+if (asli.length < 25) skor -= 10;
+skor = Math.max(5, Math.min(100, skor));
+let lbl, warna;
+if (skor >= 80) { lbl = "Judul sudah bagus"; warna = "#1a7f37"; }
+else if (skor >= 55) { lbl = "Cukup, bisa dirapikan"; warna = "#9a6700"; }
+else { lbl = "Perlu dibenahi"; warna = "#c1271e"; }
+const kwTambah = [];
+if (jenis && material) kwTambah.push(cap(jenis) + " " + cap(material));
+if (jenis && karakter[0]) kwTambah.push(cap(jenis) + " " + cap(karakter[0]));
+if (jenis && fitur[0]) kwTambah.push(cap(jenis) + " " + cap(fitur[0]));
+if (jenis && ukuran[0]) kwTambah.push(cap(jenis) + " " + cap(ukuran[0]));
+if (jenis && !kwTambah.length) kwTambah.push(cap(jenis) + " berkualitas");
+const kwUnik = [];
+kwTambah.forEach((k) => { if (k && kwUnik.indexOf(k) === -1) kwUnik.push(k); });
+let html = '<div style="border:1px solid #e3e3e3;border-radius:10px;padding:16px;background:#fafbfc">';
+html += '<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px"><div style="font-size:30px;font-weight:800;color:' + warna + ';line-height:1">' + skor + '</div><div><div style="font-size:13px;font-weight:700">Analisa AI Kata Kunci</div><div style="font-size:12px;color:#fff;background:' + warna + ';display:inline-block;padding:2px 10px;border-radius:20px;margin-top:2px">' + lbl + '</div></div></div>';
+html += '<div style="font-size:12px;color:#888;margin-bottom:3px">Judul sekarang (' + asli.length + ' huruf):</div>';
+html += '<div style="font-size:13px;background:#fff;border:1px solid #eee;border-radius:6px;padding:8px;margin-bottom:12px">' + asli + '</div>';
+html += '<div style="margin-bottom:12px"><div style="font-size:12px;font-weight:700;color:#c1271e;margin-bottom:6px">Masalah yang kedeteksi</div>' + (masalah.length ? '<ul style="margin:0 0 0 16px;font-size:13px;line-height:1.7;color:#333">' + masalah.map((x) => '<li>' + x + '</li>').join('') + '</ul>' : '<p style="font-size:13px;color:#1a7f37">Mantap, nggak ada masalah berarti.</p>') + '</div>';
+html += '<div style="margin-bottom:12px"><div style="font-size:12px;font-weight:700;color:#1a7f37;margin-bottom:6px">Versi rapi (buang kata dobel)</div><div style="font-size:13px;background:#eafaf0;border:1px solid #b6e3c6;border-radius:6px;padding:8px">' + judulRapi + '</div></div>';
+html += '<div style="margin-bottom:12px"><div style="font-size:12px;font-weight:700;color:#2383e2;margin-bottom:6px">Saran judul terstruktur (AI)</div><div style="font-size:13px;background:#eef5ff;border:1px solid #bcd9f7;border-radius:6px;padding:8px">' + saranJudul + '</div><div style="font-size:11px;color:#888;margin-top:4px">Pola: Brand + Jenis + Bahan + Varian - Jenis + Fitur + Ukuran. Sesuaikan kalau ada bagian yang kurang pas.</div></div>';
+if (kwUnik.length) html += '<div><div style="font-size:12px;font-weight:700;color:#6b21a8;margin-bottom:6px">Saran kata kunci buat dimasukin</div><div style="display:flex;flex-wrap:wrap;gap:6px">' + kwUnik.map((k) => '<span style="font-size:12px;background:#f3eaff;border-radius:20px;padding:3px 10px">' + k + '</span>').join('') + '</div></div>';
+html += '</div>';
+return html;
+}
 function renderStrategiAds() {
       const el = document.getElementById('ads');
       if (produkList.length === 0) { el.innerHTML = '<p style="color:#999">Belum ada data. Import dulu, strategi muncul otomatis.</p>'; return; }
@@ -1393,5 +1539,9 @@ function renderStrategiAds() {
 
     render();
   </script>
+<script>
+function setupAccordion() { document.querySelectorAll("section.card").forEach(function (card) { var h = card.querySelector("h2"); if (!h || card.dataset.acc) return; card.dataset.acc = "1"; var body = document.createElement("div"); body.className = "card-body"; var n = h.nextSibling; while (n) { var next = n.nextSibling; body.appendChild(n); n = next; } card.appendChild(body); h.classList.add("acc-head"); h.style.cursor = "pointer"; h.insertAdjacentHTML("beforeend", "<span class=\"acc-ico\">▸</span>"); card.classList.add("collapsed"); h.addEventListener("click", function () { card.classList.toggle("collapsed"); if (!card.classList.contains("collapsed")) { card.querySelectorAll("canvas").forEach(function (cv) { var ch = (window.Chart && Chart.getChart) ? Chart.getChart(cv) : null; if (ch) ch.resize(); }); } }); }); }
+setupAccordion();
+</script>
 </body>
 </html>
