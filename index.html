@@ -861,27 +861,119 @@ el.innerHTML = '<div style="display:flex;justify-content:space-between;align-ite
 
     function renderIklan() {
       const el = document.getElementById("iklan");
-      if (!iklanList || iklanList.length === 0) { el.innerHTML = '<p style="color:#999">Belum ada data iklan. Klik <strong>📣 Import Data Iklan</strong> di bawah, lalu pilih file laporan iklan Shopee (CPC/GMV) kamu. Nanti ROAS, ACOS, & rekomendasi per campaign muncul di sini.</p>'; return; }
-      const totalSpend = iklanList.reduce((s, c) => s + (c.biaya || 0), 0);
-      const totalAdSales = iklanList.reduce((s, c) => s + (c.omzet || 0), 0);
-      const roasGlobal = totalSpend > 0 ? totalAdSales / totalSpend : 0;
-      const acosGlobal = totalAdSales > 0 ? (totalSpend / totalAdSales) * 100 : 0;
-      const totalKlik = iklanList.reduce((s, c) => s + (c.klik || 0), 0);
-      const totalTampil = iklanList.reduce((s, c) => s + (c.dilihat || 0), 0);
-      const totalTerjual = iklanList.reduce((s, c) => s + (c.terjual || 0), 0);
-      const ctrGlobal = totalTampil > 0 ? (totalKlik / totalTampil) * 100 : 0;
-      const roasOf = (c) => (c.roas && c.roas > 0) ? c.roas : ((c.biaya || 0) > 0 ? (c.omzet || 0) / c.biaya : 0);
-      const untung = iklanList.filter((c) => roasOf(c) >= 4).sort((a, b) => roasOf(b) - roasOf(a));
-      const sedang = iklanList.filter((c) => roasOf(c) >= 2 && roasOf(c) < 4).sort((a, b) => roasOf(b) - roasOf(a));
-      const boncos = iklanList.filter((c) => roasOf(c) < 2).sort((a, b) => (b.biaya || 0) - (a.biaya || 0));
-      const spendBoncos = boncos.reduce((s, c) => s + (c.biaya || 0), 0);
-      const box = (lbl, val, sub) => '<div class="stat-box"><div class="lbl">' + lbl + '</div><div class="num">' + val + '</div>' + (sub ? '<div class="sub">' + sub + '</div>' : '') + '</div>';
-      let html = '<div class="stats" style="margin-bottom:16px">' + box("Total Biaya Iklan", formatRupiah(totalSpend), totalKlik.toLocaleString("id-ID") + " klik") + box("Omset dari Iklan", formatRupiah(totalAdSales), totalTerjual.toLocaleString("id-ID") + " terjual") + box("ROAS Keseluruhan", roasGlobal.toFixed(2) + "x", roasGlobal >= 4 ? "🟢 Sehat" : roasGlobal >= 2 ? "🟡 Cukup" : "🔴 Boncos") + box("ACOS Keseluruhan", acosGlobal.toFixed(1) + "%", "CTR " + ctrGlobal.toFixed(2) + "%") + '</div>';
-      const baris = (arr, warna, label, tujuan) => { if (arr.length === 0) return ''; const items = arr.slice(0, 8).map((c) => '<li><strong>' + c.nama + '</strong> — ROAS ' + roasOf(c).toFixed(2) + 'x · biaya ' + formatRupiah(c.biaya || 0) + ' · omset ' + formatRupiah(c.omzet || 0) + '</li>').join(""); return '<div style="border-left:4px solid ' + warna + ';padding:10px 14px;margin-bottom:12px;border-radius:0 8px 8px 0;background:#fafafa"><strong style="color:' + warna + '">' + label + ' (' + arr.length + ')</strong><div style="font-size:12px;color:#666;margin:3px 0 6px">' + tujuan + '</div><ul style="margin:0 0 0 18px;font-size:12px;line-height:1.7">' + items + '</ul></div>'; };
-      html += baris(untung, "#1a7f37", "🟢 Campaign Untung (ROAS ≥ 4)", "Gas! Naikin budget bertahap selama ROAS stabil — ini mesin uang kamu.");
-      html += baris(sedang, "#9a6700", "🟡 Campaign Cukup (ROAS 2-4)", "Optimasi: rapikan keyword, pause keyword boros, perbaiki listing biar ROAS naik.");
-      html += baris(boncos, "#c1271e", "🔴 Campaign Boncos (ROAS < 2)", "Rugi: turunin/pause budget, benahi listing & targeting dulu. Total biaya nyangkut: " + formatRupiah(spendBoncos) + ".");
-      el.innerHTML = html;
+if (!iklanList || iklanList.length === 0) {
+el.innerHTML = '<p style="color:#999">Belum ada data iklan. Klik <strong>📣 Import Data Iklan</strong> di bawah, lalu pilih file laporan iklan Shopee (CPC/GMV) kamu. Panel ini sekarang dibuat ala <strong>AutoAds</strong>: ada mode <strong>System Optimized</strong>, <strong>Custom ROAS</strong>, fase <strong>learning</strong>, plus saran target ROAS aman berdasarkan margin produk.</p>';
+return;
+}
+const totalSpend = iklanList.reduce((s, c) => s + (c.biaya || 0), 0);
+const totalAdSales = iklanList.reduce((s, c) => s + (c.omzet || 0), 0);
+const totalKlik = iklanList.reduce((s, c) => s + (c.klik || 0), 0);
+const totalTampil = iklanList.reduce((s, c) => s + (c.dilihat || 0), 0);
+const totalTerjual = iklanList.reduce((s, c) => s + (c.terjual || 0), 0);
+const roasGlobal = totalSpend > 0 ? totalAdSales / totalSpend : 0;
+const acosGlobal = totalAdSales > 0 ? (totalSpend / totalAdSales) * 100 : 0;
+const ctrGlobal = totalTampil > 0 ? (totalKlik / totalTampil) * 100 : 0;
+const cvrGlobal = totalKlik > 0 ? (totalTerjual / totalKlik) * 100 : 0;
+const cpcGlobal = totalKlik > 0 ? totalSpend / totalKlik : 0;
+const roasOf = (c) => (c.roas && c.roas > 0) ? c.roas : ((c.biaya || 0) > 0 ? (c.omzet || 0) / c.biaya : 0);
+const acosOf = (c) => (c.omzet || 0) > 0 ? ((c.biaya || 0) / (c.omzet || 0)) * 100 : 0;
+const ctrOf = (c) => (c.dilihat || 0) > 0 ? ((c.klik || 0) / (c.dilihat || 0)) * 100 : 0;
+const cvrOf = (c) => (c.klik || 0) > 0 ? ((c.terjual || 0) / (c.klik || 0)) * 100 : 0;
+const cpcOf = (c) => (c.klik || 0) > 0 ? (c.biaya || 0) / c.klik : 0;
+const cariProdukCampaign = (namaCampaign) => {
+const cn = normNama(namaCampaign);
+let best = null, bestScore = 0;
+produkList.forEach((p) => {
+const pn = normNama(p.nama);
+if (!pn || !cn) return;
+let score = 0;
+if (cn.includes(pn) || pn.includes(cn)) score += 4;
+pn.split(" ").filter((w) => w.length > 2).forEach((w) => { if (cn.includes(w)) score += 1; });
+if (score > bestScore) { bestScore = score; best = p; }
+});
+return bestScore >= 3 ? best : null;
+};
+const targetRoasDariMargin = (p) => {
+if (!p || (p.hargaJual || 0) <= 0 || (p.modal || 0) <= 0) return null;
+const margin = ((p.hargaJual || 0) - (p.modal || 0)) / (p.hargaJual || 1);
+if (margin <= 0) return { marginPct: -1, bep: 999, safe: 999 };
+const bep = 1 / margin;
+let safe = margin >= 0.45 ? 2.3 : margin >= 0.35 ? 3 : margin >= 0.25 ? 4 : margin >= 0.18 ? 5 : margin >= 0.12 ? 6.5 : 8;
+safe = Math.max(safe, +(bep + 0.4).toFixed(1));
+return { marginPct: +(margin * 100).toFixed(1), bep: +bep.toFixed(1), safe: +safe.toFixed(1) };
+};
+const modeAutoAds = (c, p, m) => {
+const r = roasOf(c);
+const klik = c.klik || 0;
+const order = c.terjual || 0;
+if (klik < 25 || order < 2) return { key: "learning", label: "LEARNING 7 HARI", warna: "#9a6700", tujuan: "Belum cukup data, biarin sistem ngumpulin sinyal dulu.", prioritas: 2 };
+if (m && r > 0 && r < m.bep) return { key: "rescue", label: "PAUSE & BENAHI", warna: "#c1271e", tujuan: "ROAS masih di bawah titik aman margin produk.", prioritas: 1 };
+if (r >= (m ? m.safe : 4) && order >= 3) return { key: "custom", label: "CUSTOM ROAS", warna: "#1a7f37", tujuan: "Udah stabil, cocok dikunci pakai target ROAS.", prioritas: 4 };
+if (r >= 2) return { key: "system", label: "SYSTEM OPTIMIZED", warna: "#2383e2", tujuan: "Masih layak jalan, lebih aman biarin sistem optimasi dulu.", prioritas: 3 };
+return { key: "rescue", label: "PAUSE & BENAHI", warna: "#c1271e", tujuan: "Belum efisien, jangan dipaksa scale.", prioritas: 1 };
+};
+const data = iklanList.map((c) => {
+const produk = cariProdukCampaign(c.nama);
+const margin = targetRoasDariMargin(produk);
+const mode = modeAutoAds(c, produk, margin);
+const roas = roasOf(c);
+const targetRoas = margin ? margin.safe : (roas >= 5 ? +(roas - 0.8).toFixed(1) : roas >= 3 ? +(roas - 0.4).toFixed(1) : 3.5);
+const autoBid = mode.key === "custom" ? "Custom ROAS" : mode.key === "system" || mode.key === "learning" ? "System Optimized" : "Pause dulu";
+let aksi;
+if (mode.key === "custom") aksi = "Naikin budget bertahap +20%/minggu, pakai target ROAS sekitar " + targetRoas + "x, jangan ubah banyak hal sekaligus.";
+else if (mode.key === "system") aksi = "Biarkan auto bidding jalan, rapikan keyword & listing. Cocok buat cari volume sambil jaga efisiensi.";
+else if (mode.key === "learning") aksi = "Masih fase belajar. Tahan 5-7 hari, jangan sering ubah bid/budget, cek lagi kalau klik & order udah kebentuk.";
+else aksi = "Pause / pangkas dulu. Benahi listing, keyword, foto utama, harga, atau alihin budget ke campaign yang lebih sehat.";
+const alasanMargin = margin ? (margin.marginPct < 0 ? "Margin produk minus." : "BEP ROAS " + margin.bep + "x · target aman " + margin.safe + "x.") : "Belum ada data harga jual + modal, jadi target ROAS masih pakai patokan umum.";
+return { c: c, produk: produk, margin: margin, mode: mode, roas: roas, acos: acosOf(c), ctr: ctrOf(c), cvr: cvrOf(c), cpc: cpcOf(c), targetRoas: targetRoas, autoBid: autoBid, aksi: aksi, alasanMargin: alasanMargin };
+}).sort((a, b) => (a.mode.prioritas - b.mode.prioritas) || ((b.c.biaya || 0) - (a.c.biaya || 0)));
+const scaleNow = data.filter((x) => x.mode.key === "custom");
+const keepLearning = data.filter((x) => x.mode.key === "learning" || x.mode.key === "system");
+const rescueNow = data.filter((x) => x.mode.key === "rescue");
+const matchedMargin = data.filter((x) => x.margin && x.margin.marginPct >= 0).length;
+const spendBoncos = rescueNow.reduce((s, x) => s + (x.c.biaya || 0), 0);
+const box = (lbl, val, sub) => '<div class="stat-box"><div class="lbl">' + lbl + '</div><div class="num">' + val + '</div>' + (sub ? '<div class="sub">' + sub + '</div>' : '') + '</div>';
+let html = '';
+html += '<div class="stats" style="margin-bottom:16px">' +
+box("Total Biaya Iklan", formatRupiah(totalSpend), totalKlik.toLocaleString("id-ID") + " klik") +
+box("Omset dari Iklan", formatRupiah(totalAdSales), totalTerjual.toLocaleString("id-ID") + " order") +
+box("ROAS / ACOS", roasGlobal.toFixed(2) + "x", "ACOS " + acosGlobal.toFixed(1) + "%") +
+box("CTR / CVR", ctrGlobal.toFixed(2) + "%", "CVR " + cvrGlobal.toFixed(2) + "% · CPC " + formatRupiahFull(Math.round(cpcGlobal))) +
+'</div>';
+html += '<div style="background:linear-gradient(135deg,#eef5ff,#f8fbff);border:1px solid #dbe7ff;border-radius:12px;padding:14px;margin-bottom:16px">' +
+'<div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:flex-start">' +
+'<div><div style="font-size:14px;font-weight:800;color:#111827;margin-bottom:4px">🧠 Mesin Analisa Iklan gaya AutoAds</div><div style="font-size:12px;color:#667085;line-height:1.6">Fokus yang gue ambil dari riset AutoAds + pola Shopee Ads: <strong>System Optimized vs Custom ROAS</strong>, <strong>fase learning</strong>, dan <strong>batas ROAS aman berdasarkan margin</strong>. Jadi sekarang campaign nggak cuma dibilang untung/rugi, tapi dikasih mode eksekusi yang lebih jelas.</div></div>' +
+'<div style="font-size:11px;color:#667085;background:#fff;border:1px solid #e5e7eb;border-radius:999px;padding:6px 10px">Margin match: ' + matchedMargin + '/' + data.length + ' campaign</div>' +
+'</div></div>';
+const kartuMode = (warna, judul, arr, sub, note) => '<div style="border-left:4px solid ' + warna + ';background:#fff;padding:12px 14px;margin-bottom:12px;border-radius:0 10px 10px 0;border:1px solid #eef1f5"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center"><strong style="color:' + warna + '">' + judul + ' (' + arr.length + ')</strong><span style="font-size:11px;color:#667085">' + sub + '</span></div><div style="font-size:12px;color:#555;margin-top:5px;line-height:1.6">' + note + '</div>' + (arr.length ? '<ul style="margin:8px 0 0 18px;font-size:12px;line-height:1.7">' + arr.slice(0, 6).map((x) => '<li><strong>' + x.c.nama + '</strong> — ROAS ' + x.roas.toFixed(2) + 'x · ' + x.autoBid + (x.margin ? ' · target aman ' + x.targetRoas + 'x' : '') + '</li>').join("") + '</ul>' : '') + '</div>';
+html += kartuMode("#1a7f37", "🚀 Scale Sekarang", scaleNow, "pakai Custom ROAS", "Campaign yang udah stabil & efisien. Aman dinaikin pelan-pelan, tapi tetap jaga perubahan satu per satu.");
+html += kartuMode("#2383e2", "🧪 Tetap Jalan / Learning", keepLearning, "pakai System Optimized", "Cocok buat campaign yang datanya belum cukup atau performanya lumayan tapi belum matang. Jangan kebanyakan oprek sebelum lewat masa belajar ±7 hari.");
+html += kartuMode("#c1271e", "🩹 Rescue / Pause Dulu", rescueNow, spendBoncos > 0 ? "budget rawan bocor " + formatRupiah(spendBoncos) : "perlu dibenahi", "Kalau ROAS di bawah titik aman margin atau terlalu tipis, lebih sehat benahi fondasi listing + keyword dulu daripada dipaksa nambah budget.");
+html += '<div style="background:#fff8e8;border:1px solid #f2d7a1;border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:12px;line-height:1.7;color:#7a4b00"><strong>Catatan penting:</strong> AutoAds / auto bidding bukan sulap. Kalau foto utama jelek, keyword meleset, harga kalah, atau review minim, iklan cuma memperbesar kebocoran. Makanya panel ini sengaja selalu ngaitin keputusan iklan ke <strong>listing readiness</strong> dan <strong>margin produk</strong>, bukan ROAS doang.</div>';
+html += '<h3 style="font-size:14px;margin:16px 0 8px">Rincian Campaign & Mode AutoAds</h3>';
+html += '<div style="max-height:440px;overflow-y:auto;border:1px solid #eee;border-radius:10px;background:#fff">';
+html += data.map((x) => {
+const c = x.c;
+const produkTxt = x.produk ? ('<span style="font-size:11px;color:#667085">Match produk: <strong>' + x.produk.nama + '</strong></span>') : '<span style="font-size:11px;color:#999">Belum nemu produk yang cocok otomatis</span>';
+return '<div style="padding:12px 14px;border-bottom:1px solid #f1f3f7">' +
+'<div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:flex-start;margin-bottom:6px">' +
+'<div><div style="font-size:13px;font-weight:700;color:#111827">' + c.nama + '</div>' + produkTxt + '</div>' +
+'<span style="font-size:10px;font-weight:700;color:#fff;background:' + x.mode.warna + ';padding:3px 9px;border-radius:20px">' + x.mode.label + '</span>' +
+'</div>' +
+'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(115px,1fr));gap:8px;margin-bottom:8px">' +
+'<div style="background:#f8fafc;border:1px solid #eef1f5;border-radius:8px;padding:8px"><div style="font-size:10px;color:#888">ROAS</div><div style="font-size:14px;font-weight:800;color:#111827">' + x.roas.toFixed(2) + 'x</div></div>' +
+'<div style="background:#f8fafc;border:1px solid #eef1f5;border-radius:8px;padding:8px"><div style="font-size:10px;color:#888">ACOS</div><div style="font-size:14px;font-weight:800;color:#111827">' + x.acos.toFixed(1) + '%</div></div>' +
+'<div style="background:#f8fafc;border:1px solid #eef1f5;border-radius:8px;padding:8px"><div style="font-size:10px;color:#888">CTR</div><div style="font-size:14px;font-weight:800;color:#111827">' + x.ctr.toFixed(2) + '%</div></div>' +
+'<div style="background:#f8fafc;border:1px solid #eef1f5;border-radius:8px;padding:8px"><div style="font-size:10px;color:#888">CVR</div><div style="font-size:14px;font-weight:800;color:#111827">' + x.cvr.toFixed(2) + '%</div></div>' +
+'<div style="background:#f8fafc;border:1px solid #eef1f5;border-radius:8px;padding:8px"><div style="font-size:10px;color:#888">CPC</div><div style="font-size:14px;font-weight:800;color:#111827">' + formatRupiahFull(Math.round(x.cpc)) + '</div></div>' +
+'<div style="background:#f8fafc;border:1px solid #eef1f5;border-radius:8px;padding:8px"><div style="font-size:10px;color:#888">Mode</div><div style="font-size:13px;font-weight:800;color:#111827">' + x.autoBid + '</div></div>' +
+'</div>' +
+'<div style="font-size:12px;line-height:1.65;color:#555;margin-bottom:4px"><strong>Saran target ROAS:</strong> ' + x.targetRoas + 'x. ' + x.alasanMargin + '</div>' +
+'<div style="font-size:12px;line-height:1.65;color:#555"><strong>Aksi:</strong> ' + x.aksi + '</div>' +
+'</div>';
+}).join("");
+html += '</div>';
+el.innerHTML = html;
     }
 
     function renderLaporan() {
