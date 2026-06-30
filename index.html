@@ -227,7 +227,7 @@
 <div id="studio-ref-status"></div>
 <div style="font-size:12px;color:#888;margin:12px 0 6px">3. Pilih produk:</div>
 <select id="studio-produk" style="padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-size:14px;width:100%;max-width:420px;margin-bottom:12px"></select>
-<div><button onclick="koreksiGambar()">🔍 Koreksi & Saran Gambar</button></div>
+<div style="display:flex;gap:10px;flex-wrap:wrap"><button onclick="koreksiGambar()">🔍 Koreksi & Saran Gambar</button><button class="ghost" onclick="koreksiHero()">🦸 Koreksi Hero Fungsi</button></div>
 <div id="studio-preview" style="margin-top:14px"></div>
 </section>
 <section class="card" id="keyword-card">
@@ -1665,6 +1665,129 @@ function buatPolos(tipe) { let w, h, nama; if (tipe === "story") { w = 1080; h =
 function estimasiTerang(img) { try { const c = document.createElement("canvas"); c.width = 24; c.height = 24; const cx = c.getContext("2d"); cx.drawImage(img, 0, 0, 24, 24); const d = cx.getImageData(0, 0, 24, 24).data; let s = 0, n = 0; for (let i = 0; i < d.length; i += 4) { s += 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]; n++; } return n ? Math.round(s / n) : null; } catch (e) { return null; } }
 function sellingPointFungsi(p) { const nama = (p.nama || "").toLowerCase(); const kat = (p.kategori || "").toLowerCase(); const sp = []; const ada = (arr) => arr.some((w) => nama.includes(w)); if (ada(["termos", "panas", "insulat", "vacuum", "suhu"])) sp.push("Jaga suhu panas/dingin tahan berjam-jam — tunjukin bukti 'masih panas setelah sekian jam'."); if (ada(["dispenser", "keran", "kran", "pump", "pompa"])) sp.push("Tinggal pencet/putar keran, nuang gampang tanpa tumpah — pas buat jualan & acara."); if (ada(["besar", "jumbo", "liter", "kapasitas", "family"])) sp.push("Kapasitas besar, sekali isi cukup buat banyak orang — hemat bolak-balik."); if (ada(["stainless", "baja", "steel", "food grade"])) sp.push("Bahan stainless food grade: kuat, anti karat, aman buat makanan/minuman."); if (ada(["portable", "mini", "lipat", "travel", "ringkas"])) sp.push("Ringkas & gampang dibawa — praktis dipakai di mana aja."); if (ada(["baterai", "cas", "usb", "wireless", "nirkabel", "rechargeable"])) sp.push("Isi ulang lewat USB, tanpa ribet kabel — bisa dipakai di mana saja."); if (ada(["anti", "bocor", "tumpah", "waterproof"])) sp.push("Anti bocor/tumpah — aman dibawa dalam tas atau perjalanan."); if (ada(["mudah", "praktis", "otomatis", "cepat", "instan"])) sp.push("Pakainya praktis & cepat — hemat waktu buat kegiatan harian."); if (sp.length < 3) { if (kat.includes("rumah")) sp.push("Bikin pekerjaan rumah lebih cepat & gampang."); else if (kat.includes("makan") || kat.includes("minum")) sp.push("Jaga makanan/minuman tetap segar & praktis disajikan."); else if (kat.includes("elektronik") || kat.includes("gadget")) sp.push("Fitur fungsional yang bikin aktivitas sehari-hari lebih efisien."); else if (kat.includes("kecantikan") || kat.includes("kesehatan")) sp.push("Manfaat nyata buat perawatan harian — tonjolin hasil/before-after."); else sp.push("Tonjolin manfaat utama: masalah apa yang produk ini selesaikan buat pembeli."); } sp.push("Hindari jualan 'mewah/premium' — ganti dengan bukti fungsi: durasi, kapasitas, kemudahan, hasil nyata."); return sp; }
 function koreksiHtml(p, opts) { const sp = sellingPointFungsi(p); const fix = []; if (!opts.adaProduk) { fix.push("Belum ada foto produk. Upload foto produk dulu biar bisa dikoreksi."); } else { if (opts.cut && opts.cut.tainted) { fix.push("Foto dari URL keblok (CORS), nggak bisa dianalisa detail. Download lalu upload manual."); } else { if (opts.cut && opts.cut.removed < 0.06) fix.push("Background foto rame/nggak polos. Foto ulang dengan latar putih bersih biar produk jadi fokus utama."); if (opts.terang != null && opts.terang < 70) fix.push("Foto kegelapan. Foto di tempat terang / tambah cahaya biar detail & warna produk jelas."); if (opts.terang != null && opts.terang > 225) fix.push("Foto kelewat terang (washout). Kurangi cahaya/flash biar tekstur produk kelihatan."); } } fix.push("Tunjukin produk SEDANG DIPAKAI (in-use), bukan cuma diam di meja — biar fungsinya kebayang."); fix.push("Kasih callout fitur: panah + teks pendek nunjuk bagian penting (mis. 'keran anti-tetes', 'tahan panas 6 jam')."); fix.push("Tampilkan skala/ukuran: bandingin sama tangan atau benda umum biar kebayang gedenya."); fix.push("Tonjolin hasil/manfaat, bukan kesan mewah. Ganti properti mahal yang nggak relevan dengan demo fungsi."); const checklist = ["Foto utama nunjukin fungsi/manfaat jelas", "Background bersih, produk jadi fokus", "Ada teks benefit singkat (bukan 'premium/mewah')", "Cahaya cukup, warna produk akurat", "Ada bukti: ukuran, kapasitas, atau hasil"]; let html = '<div style="border:1px solid #e3e3e3;border-radius:10px;padding:16px;background:#fafbfc">'; html += '<div style="font-size:14px;font-weight:800;margin-bottom:12px">Koreksi Gambar & Selling Point (fokus fungsi)</div>'; html += '<div style="margin-bottom:14px"><div style="font-size:12px;font-weight:700;color:#1a7f37;margin-bottom:6px">Selling point berbasis FUNGSI</div><ul style="margin:0 0 0 16px;font-size:13px;line-height:1.7;color:#333">' + sp.map((x) => '<li>' + x + '</li>').join('') + '</ul></div>'; html += '<div style="margin-bottom:14px"><div style="font-size:12px;font-weight:700;color:#9a6700;margin-bottom:6px">Koreksi foto biar lebih jualan</div><ul style="margin:0 0 0 16px;font-size:13px;line-height:1.7;color:#333">' + fix.map((x) => '<li>' + x + '</li>').join('') + '</ul></div>'; html += '<div><div style="font-size:12px;font-weight:700;color:#2383e2;margin-bottom:6px">Checklist sebelum posting</div><ul style="margin:0 0 0 16px;font-size:13px;line-height:1.7;color:#333">' + checklist.map((x) => '<li>' + x + '</li>').join('') + '</ul></div>'; html += '</div>'; return html; }
+function heroAngleFungsi(p) {
+const sp = sellingPointFungsi(p);
+const nama = String(p.nama || "");
+const n = nama.toLowerCase();
+let hook = "Tonjolin fungsi utama produk dalam 4-7 kata, bukan kata keren yang terlalu umum.";
+let visual = "Tampilin produk sedang dipakai, close-up ke bagian yang paling nunjukin manfaat.";
+let bukti = "Kasih bukti cepat: kapasitas, ukuran, durasi, material, atau hasil pakai.";
+let cta = "Cek detail produk";
+if (n.includes("termos") || n.includes("vacuum") || n.includes("panas") || n.includes("dingin")) {
+hook = "Jaga minuman tetap panas lebih lama";
+visual = "Hero harus nunjukin uap / minuman dituangkan + close-up tutup atau body termos.";
+bukti = "Kasih bukti durasi tahan panas/dingin, kapasitas, dan material stainless.";
+cta = "Lihat kapasitas & detail";
+}
+else if (n.includes("dispenser") || n.includes("keran") || n.includes("kran") || n.includes("pump") || n.includes("pompa")) {
+hook = "Nuang minuman cepat tanpa tumpah";
+visual = "Hero wajib nunjukin tangan lagi pakai keran / tombol, jangan cuma foto produk diem.";
+bukti = "Tunjukin aliran air, kapasitas, dan kemudahan pakai buat acara / jualan.";
+cta = "Cek cara pakainya";
+}
+else if (n.includes("stainless") || n.includes("steel")) {
+hook = "Kuat dipakai harian, aman buat makanan";
+visual = "Tunjukin detail permukaan bahan + konteks pemakaian dapur / meja makan.";
+bukti = "Kasih bukti food grade, tebal bahan, anti karat, atau gampang dibersihin.";
+cta = "Lihat bahan & ukuran";
+}
+else if (n.includes("portable") || n.includes("travel") || n.includes("mini") || n.includes("lipat")) {
+hook = "Praktis dibawa ke mana aja";
+visual = "Hero harus nunjukin produk dipegang / masuk tas / dipakai on-the-go.";
+bukti = "Kasih bukti ukuran ringkas, berat ringan, atau mudah disimpan.";
+cta = "Cek ukuran ringkas";
+}
+const badges = [];
+if ((p.hargaJual || 0) > 0) badges.push("Harga " + formatRupiahFull(p.hargaJual));
+if ((p.pesanan || 0) > 0) badges.push("Terjual " + (p.pesanan || 0).toLocaleString("id-ID"));
+if (p.stok != null && p.stok > 0 && p.stok <= 10) badges.push("Stok " + p.stok);
+if (badges.length === 0 && (p.cvr || 0) > 0) badges.push("CVR " + p.cvr + "%");
+return { hook: hook, visual: visual, bukti: bukti, cta: cta, bullets: sp.slice(0, 3), badges: badges.slice(0, 3) };
+}
+function koreksiHeroHtml(p, opts) {
+const ang = heroAngleFungsi(p);
+const diag = diagnosaListingSpesifik(p);
+const fix = [];
+if (!opts.adaProduk) {
+fix.push("Belum ada foto produk. Upload foto produk dulu biar hero bisa dibangun dari visual asli, bukan asumsi.");
+} else if (opts.cut && opts.cut.tainted) {
+fix.push("Foto dari URL keblok (CORS), jadi detail visual nggak bisa dicek penuh. Download lalu upload manual biar hero lebih akurat.");
+} else {
+if (opts.cut && opts.cut.removed < 0.06) fix.push("Background foto masih rame. Untuk hero, produk harus kepisah bersih biar fungsi utamanya kebaca cepat.");
+if (opts.terang != null && opts.terang < 70) fix.push("Foto hero terlalu gelap. Naikin exposure / cahaya biar detail fungsi kebaca dalam 1 detik.");
+if (opts.terang != null && opts.terang > 225) fix.push("Foto hero terlalu putih / washout. Turunin highlight biar bahan & detail produk tetap kelihatan.");
+}
+if (diag.code === "thumbnail" || diag.code === "hookLeak") fix.push("Data nunjukkin masalah di hook awal. Jadi hero wajib fokus ke 1 manfaat utama + close-up bagian penting, jangan kebanyakan dekor.");
+if (diag.code === "closing" || diag.code === "priceTrust" || diag.code === "listingLeak") fix.push("Traffic udah masuk tapi belum closing. Tambahin bukti trust di hero: ukuran, isi paket, material, kapasitas, atau hasil pakai.");
+fix.push("Jangan buka hero dengan kata generik kayak 'premium', 'elegan', atau 'best seller' doang. Buka dengan manfaat nyata.");
+fix.push("Pakai maksimal 1 headline utama, 3 bullet fungsi, dan 1 CTA. Kalau teks terlalu rame, hero jadi berat dan nggak kebaca cepat.");
+const headline1 = ang.hook;
+const headline2 = ang.bullets[0] || "Tonjolin manfaat utama produk";
+const headline3 = ang.bukti;
+const badgeHtml = ang.badges.length ? ang.badges.map((x) => '<span style="display:inline-block;background:#eef5ff;color:#2383e2;border:1px solid #cfe0fb;border-radius:999px;padding:4px 10px;font-size:11px;font-weight:700;margin:0 6px 6px 0">' + x + '</span>').join("") : '<span style="font-size:12px;color:#888">Belum ada badge data yang kuat. Isi harga, pesanan, atau stok biar hero lebih meyakinkan.</span>';
+const bullets = ang.bullets.length ? ang.bullets.map((x) => '<li>' + x + '</li>').join("") : '<li>Tonjolin masalah yang produk ini selesaikan.</li>';
+const checklist = [
+"Foto utama close-up ke bagian paling fungsional",
+"Ada scene produk sedang dipakai",
+"Headline langsung ngomong manfaat, bukan gaya",
+"Badge bukti singkat: harga / kapasitas / terjual / stok",
+"CTA singkat dan jelas"
+];
+let html = '<div style="border:1px solid #e3e3e3;border-radius:10px;padding:16px;background:#fafbfc">';
+html += '<div style="font-size:14px;font-weight:800;margin-bottom:12px">Koreksi Hero Selling Point — fokus fungsi</div>';
+html += '<div style="margin-bottom:14px"><div style="font-size:12px;font-weight:700;color:#1a7f37;margin-bottom:6px">Formula hero yang seharusnya</div><div style="font-size:13px;line-height:1.8;color:#333;background:#fff;border:1px solid #e9eef5;border-radius:8px;padding:10px 12px"><strong>Headline:</strong> ' + ang.hook + '<br><strong>Visual utama:</strong> ' + ang.visual + '<br><strong>Bukti pendukung:</strong> ' + ang.bukti + '<br><strong>CTA:</strong> ' + ang.cta + '</div></div>';
+html += '<div style="margin-bottom:14px"><div style="font-size:12px;font-weight:700;color:#9a6700;margin-bottom:6px">Apa yang harus diubah di hero sekarang</div><ul style="margin:0 0 0 16px;font-size:13px;line-height:1.7;color:#333">' + fix.map((x) => '<li>' + x + '</li>').join("") + '</ul></div>';
+html += '<div style="margin-bottom:14px"><div style="font-size:12px;font-weight:700;color:#6b21a8;margin-bottom:6px">Contoh angle hero yang lebih jualan</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px"><div style="background:#fff;border:1px solid #ece7ff;border-radius:8px;padding:10px"><div style="font-size:11px;color:#6b21a8;font-weight:700;margin-bottom:6px">HEADLINE 1</div><div style="font-size:13px;font-weight:700;color:#111827">' + headline1 + '</div></div><div style="background:#fff;border:1px solid #ece7ff;border-radius:8px;padding:10px"><div style="font-size:11px;color:#6b21a8;font-weight:700;margin-bottom:6px">HEADLINE 2</div><div style="font-size:13px;font-weight:700;color:#111827">' + headline2 + '</div></div><div style="background:#fff;border:1px solid #ece7ff;border-radius:8px;padding:10px"><div style="font-size:11px;color:#6b21a8;font-weight:700;margin-bottom:6px">HEADLINE 3</div><div style="font-size:13px;font-weight:700;color:#111827">' + headline3 + '</div></div></div></div>';
+html += '<div style="margin-bottom:14px"><div style="font-size:12px;font-weight:700;color:#2383e2;margin-bottom:6px">Badge / bukti yang bisa dipasang di hero</div><div>' + badgeHtml + '</div></div>';
+html += '<div style="margin-bottom:14px"><div style="font-size:12px;font-weight:700;color:#1a7f37;margin-bottom:6px">3 bullet selling point fungsi</div><ul style="margin:0 0 0 16px;font-size:13px;line-height:1.7;color:#333">' + bullets + '</ul></div>';
+html += '<div><div style="font-size:12px;font-weight:700;color:#2383e2;margin-bottom:6px">Checklist hero sebelum dipakai</div><ul style="margin:0 0 0 16px;font-size:13px;line-height:1.7;color:#333">' + checklist.map((x) => '<li>' + x + '</li>').join("") + '</ul></div>';
+html += '</div>';
+return html;
+}
+async function koreksiHero() {
+const el = document.getElementById("studio-preview");
+const sel = document.getElementById("studio-produk");
+if (!sel || !sel.value) { alert("Pilih produk dulu."); return; }
+const p = produkList.find((x) => String(x.id) === String(sel.value));
+if (!p) { alert("Produk nggak ketemu."); return; }
+el.innerHTML = '<p style="color:#888;font-size:13px">Lagi nyusun koreksi hero...</p>';
+let srcImg = bgImg;
+if (!srcImg && p.foto) srcImg = await muatGambar(p.foto);
+let cut = null, terang = null, previewUrl = "";
+if (srcImg) {
+cut = hapusLatar(srcImg);
+terang = estimasiTerang(srcImg);
+const pim = (cut && cut.canvas) ? cut.canvas : srcImg;
+try {
+const pc = document.createElement("canvas");
+pc.width = 420; pc.height = 220;
+const c = pc.getContext("2d");
+c.fillStyle = "#eef2f7";
+c.fillRect(0, 0, 420, 220);
+drawImageContain(c, pim, 10, 10, 170, 200);
+c.fillStyle = "#111827";
+c.font = "800 20px Inter, system-ui, sans-serif";
+const ang = heroAngleFungsi(p);
+wrapText(c, ang.hook, 195, 64, 200, 24, 3);
+c.fillStyle = "#4b5563";
+c.font = "500 12px Inter, system-ui, sans-serif";
+wrapText(c, ang.bukti, 195, 142, 190, 16, 4);
+previewUrl = pc.toDataURL("image/png");
+} catch (e) { previewUrl = ""; }
+}
+el.innerHTML = "";
+const head = document.createElement("p");
+head.style.cssText = "font-size:13px;color:#555;margin-bottom:10px";
+head.innerHTML = "Tool ini fokus ngebenerin <strong>hero selling point</strong> biar lebih ngomongin fungsi & manfaat, bukan sekadar visual bagus.";
+el.appendChild(head);
+if (previewUrl) {
+const im = document.createElement("img");
+im.src = previewUrl;
+im.style.cssText = "width:100%;max-width:420px;border-radius:10px;border:1px solid #eee;margin-bottom:12px;display:block";
+el.appendChild(im);
+}
+el.insertAdjacentHTML("beforeend", koreksiHeroHtml(p, { adaProduk: !!srcImg, cut: cut, terang: terang }));
+}
 async function koreksiGambar() { const el = document.getElementById("studio-preview"); const sel = document.getElementById("studio-produk"); if (!sel || !sel.value) { alert("Pilih produk dulu."); return; } const p = produkList.find((x) => String(x.id) === String(sel.value)); if (!p) { alert("Produk nggak ketemu."); return; } el.innerHTML = '<p style="color:#888;font-size:13px">Lagi nganalisa & nyusun koreksi...</p>'; let srcImg = bgImg; if (!srcImg && p.foto) srcImg = await muatGambar(p.foto); let cut = null, terang = null, previewUrl = ""; if (srcImg) { cut = hapusLatar(srcImg); terang = estimasiTerang(srcImg); const pim = (cut && cut.canvas) ? cut.canvas : srcImg; try { const pc = document.createElement("canvas"); pc.width = 300; pc.height = 300; const c = pc.getContext("2d"); c.fillStyle = "#f4f5f7"; c.fillRect(0, 0, 300, 300); drawImageContain(c, pim, 8, 8, 284, 284); previewUrl = pc.toDataURL("image/png"); } catch (e) { previewUrl = ""; } } el.innerHTML = ""; const head = document.createElement("p"); head.style.cssText = "font-size:13px;color:#555;margin-bottom:10px"; head.innerHTML = "Koreksi buat <strong>" + (p.nama || "") + "</strong> — nggak nge-generate gambar baru, fokus ke saran biar fotomu lebih jualan (angle fungsi, bukan mewah)."; el.appendChild(head); if (previewUrl) { const im = document.createElement("img"); im.src = previewUrl; im.style.cssText = "width:180px;height:180px;border-radius:10px;border:1px solid #eee;margin-bottom:10px;display:block"; el.appendChild(im); } el.insertAdjacentHTML("beforeend", koreksiHtml(p, { adaProduk: !!srcImg, cut: cut, terang: terang })); }
 function formatRupiahFull(n) { return "Rp " + (n || 0).toLocaleString("id-ID"); }
 function wrapText(ctx, text, x, y, maxW, lh, maxLines) {
