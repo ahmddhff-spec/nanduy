@@ -230,6 +230,76 @@
 <div style="display:flex;gap:10px;flex-wrap:wrap"><button onclick="koreksiGambar()">📊 Diagnosa Foto dari Data</button><button class="ghost" onclick="koreksiVisual()">🖼️ Koreksi Gambar Aja</button><button class="ghost" onclick="koreksiHero()">🦸 Koreksi Hero Fungsi</button></div>
 <div id="studio-preview" style="margin-top:14px"></div>
 </section>
+<section class="card" id="adstudio-card">
+<h2>🎬 Ad Studio — Generator Banner Iklan (Langsung Jadi)</h2>
+<p style="font-size:13px;color:#666;margin-bottom:12px">Versi "langsung jadi" dari Ad Studio Pro — tanpa API/Gemini. Bikin <strong>banner katalog</strong>, <strong>slide detail kegunaan</strong>, &amp; <strong>edit foto</strong> langsung di sini dari foto produk asli kamu (auto-cutout + komposisi canvas). Catatan jujur: tool ini <strong>menyusun foto produkmu</strong> jadi banner siap-pakai (headline, badge, harga, CTA, dll) — bukan ngarang foto studio baru dari nol.</p>
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+<button type="button" class="ads-tab-btn" data-tab="katalog" onclick="adsTab('katalog')">🖼️ Katalog Banner</button>
+<button type="button" class="ads-tab-btn ghost" data-tab="detail" onclick="adsTab('detail')">📋 Detail Kegunaan</button>
+<button type="button" class="ads-tab-btn ghost" data-tab="editor" onclick="adsTab('editor')">✏️ Editor Foto</button>
+</div>
+<div id="ads-tab-katalog">
+<div style="font-size:12px;color:#888;margin-bottom:6px">1. Pilih produk (foto &amp; data keambil otomatis):</div>
+<select id="ads-studio-produk" style="padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-size:14px;width:100%;max-width:420px;margin-bottom:10px"></select>
+<div style="font-size:12px;color:#888;margin:6px 0 6px">2. (Opsional) upload foto produk sendiri (paling bagus background putih/polos):</div>
+<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:6px">
+<button class="ghost" type="button" onclick="document.getElementById('ads-file').click()">📤 Upload Foto Produk</button>
+<button class="ghost" type="button" onclick="adsHapusFoto()">Hapus Foto</button>
+<input type="file" id="ads-file" accept="image/*" hidden onchange="adsUploadFoto(event)" />
+</div>
+<div id="ads-foto-status"></div>
+<div style="font-size:12px;color:#888;margin:12px 0 6px">3. Atur layout &amp; tampilan:</div>
+<div class="grid" style="margin-bottom:10px">
+<label>Posisi Teks<select id="ads-layout"><option value="kiri">Teks Kiri · Produk Kanan</option><option value="kanan">Teks Kanan · Produk Kiri</option><option value="atas">Teks Atas · Produk Bawah</option><option value="bawah">Teks Bawah · Produk Atas</option></select></label>
+<label>Kepadatan Teks<select id="ads-density"><option value="minimal">Minimalis</option><option value="sedang" selected>Sedang</option><option value="padat">Padat (banyak info)</option></select></label>
+<label>Rasio / Ukuran<select id="ads-ratio"><option value="1:1">1:1 — Katalog/Feed</option><option value="4:5">4:5 — IG Portrait</option><option value="16:9">16:9 — Banner Lebar</option><option value="9:16">9:16 — Story/Reels</option></select></label>
+<label>Suasana / Background<select id="ads-vibe"><option value="auto">Auto (variasi)</option><option value="putih">Putih Bersih</option><option value="marmer">Marmer Mewah</option><option value="gelap">Gelap Premium</option><option value="warm">Homeliving Hangat</option></select></label>
+</div>
+<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
+<label style="flex-direction:row;align-items:center;gap:8px">Warna Utama <input type="color" id="ads-cmain" value="#111827" style="width:46px;height:32px;padding:2px"></label>
+<label style="flex-direction:row;align-items:center;gap:8px">Warna Aksen <input type="color" id="ads-cacc" value="#ee4d2d" style="width:46px;height:32px;padding:2px"></label>
+</div>
+<div style="font-size:12px;color:#888;margin:6px 0 6px">4. Elemen banner (centang yang mau muncul):</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:4px 12px;margin-bottom:10px">
+<label style="flex-direction:row;align-items:center;gap:6px"><input type="checkbox" id="ads-cta" checked> Tombol Beli (CTA)</label>
+<label style="flex-direction:row;align-items:center;gap:6px"><input type="checkbox" id="ads-harga" checked> Harga / Diskon</label>
+<label style="flex-direction:row;align-items:center;gap:6px"><input type="checkbox" id="ads-bullets"> Fitur Kegunaan</label>
+<label style="flex-direction:row;align-items:center;gap:6px"><input type="checkbox" id="ads-warranty" checked> Badge Garansi</label>
+<label style="flex-direction:row;align-items:center;gap:6px"><input type="checkbox" id="ads-ready" checked> Ready Stock</label>
+<label style="flex-direction:row;align-items:center;gap:6px"><input type="checkbox" id="ads-official" checked> Official Store</label>
+<label style="flex-direction:row;align-items:center;gap:6px"><input type="checkbox" id="ads-ongkir"> Gratis Ongkir</label>
+<label style="flex-direction:row;align-items:center;gap:6px"><input type="checkbox" id="ads-dimensi"> Tampilkan Ukuran</label>
+</div>
+<label style="margin-bottom:10px">Teks ukuran/dimensi (opsional)<input type="text" id="ads-dimensi-txt" placeholder="cth: 28cm, 30cm, 32cm"></label>
+<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin:6px 0 10px">
+<label style="flex-direction:row;align-items:center;gap:8px;flex:1;min-width:200px">Jumlah variasi <input type="range" id="ads-qty" min="1" max="6" value="3" oninput="var v=document.getElementById('ads-qty-val'); if(v) v.textContent=this.value+' banner'"> <span id="ads-qty-val" style="font-weight:700">3 banner</span></label>
+<label style="flex-direction:row;align-items:center;gap:6px"><input type="checkbox" id="ads-variasi" checked> Auto variasi</label>
+</div>
+<div style="display:flex;gap:10px;flex-wrap:wrap"><button type="button" onclick="adsRenderKatalog()">⚡ Render Banner</button></div>
+<div id="ads-katalog-hasil" style="margin-top:14px"></div>
+</div>
+<div id="ads-tab-detail" style="display:none">
+<div style="font-size:12px;color:#888;margin-bottom:6px">Pilih produk:</div>
+<select id="ads-detail-produk" style="padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-size:14px;width:100%;max-width:420px;margin-bottom:10px"></select>
+<label style="max-width:340px;margin-bottom:10px">Gaya slide<select id="ads-detail-gaya"><option value="editorial">Editorial (produk + spesifikasi)</option><option value="infografis">Infografis (poin kegunaan)</option><option value="macro">Macro (close-up + judul)</option></select></label>
+<div style="display:flex;gap:10px;flex-wrap:wrap"><button type="button" onclick="adsRenderDetail()">📋 Render Slide Detail</button></div>
+<div id="ads-detail-hasil" style="margin-top:14px"></div>
+</div>
+<div id="ads-tab-editor" style="display:none">
+<div style="font-size:12px;color:#888;margin-bottom:6px">Upload foto buat diedit (angkat latar, auto-enhance, resize):</div>
+<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
+<button class="ghost" type="button" onclick="document.getElementById('ads-editor-file').click()">📤 Upload Foto</button>
+<input type="file" id="ads-editor-file" accept="image/*" hidden onchange="adsEditorUpload(event)" />
+</div>
+<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
+<button type="button" onclick="adsEditorAksi('latar')">🧹 Hapus Latar (Putih)</button>
+<button class="ghost" type="button" onclick="adsEditorAksi('enhance')">✨ Auto Enhance</button>
+<button class="ghost" type="button" onclick="adsEditorAksi('resize')">📐 Smart Resize</button>
+<label style="flex-direction:row;align-items:center;gap:6px;font-size:12px">ke <select id="ads-editor-ratio"><option value="9:16">9:16</option><option value="1:1">1:1</option><option value="4:5">4:5</option><option value="16:9">16:9</option></select></label>
+</div>
+<div id="ads-editor-hasil" style="margin-top:6px"></div>
+</div>
+</section>
 <section class="card" id="keyword-card">
 <h2>🔑 SEO Judul & Riset Kata Kunci</h2>
 <p style="font-size:13px;color:#666;margin-bottom:12px">AI nganalisa judul produk kamu: deteksi kata kunci yang dobel/keyword stuffing, kasih versi judul yang lebih rapi & SEO-friendly buat Shopee, plus saran kata kunci tambahan. Pilih produk atau tempel judul manual.</p>
@@ -2547,6 +2617,192 @@ function setupBatchNav() {
 
 setupAccordion();
 setupBatchNav();
+</script>
+<script>
+/* ===== ADS STUDIO (Banner Generator lokal, tanpa API) ===== */
+let adsFotoData = null, adsFotoImg = null;
+let adsEditorImg = null, adsEditorCanvas = null;
+function adsVal(id){ var e=document.getElementById(id); return e?e.value:""; }
+function adsChk(id){ var e=document.getElementById(id); return e?!!e.checked:false; }
+function adsTab(name){
+  ["katalog","detail","editor"].forEach(function(t){ var d=document.getElementById("ads-tab-"+t); if(d) d.style.display=(t===name)?"block":"none"; });
+  document.querySelectorAll(".ads-tab-btn").forEach(function(b){ if(b.dataset.tab===name) b.classList.remove("ghost"); else b.classList.add("ghost"); });
+}
+function adsIsiProduk(){
+  ["ads-studio-produk","ads-detail-produk"].forEach(function(id){
+    var sel=document.getElementById(id); if(!sel) return;
+    var cur=sel.value;
+    var tops=produkList.slice().sort(function(a,b){return (b.omset||0)-(a.omset||0);});
+    sel.innerHTML="";
+    if(tops.length===0){ var o=document.createElement("option"); o.value=""; o.textContent="(belum ada produk)"; sel.appendChild(o); }
+    else { tops.forEach(function(p){ var o=document.createElement("option"); o.value=p.id; o.textContent=p.nama||"Tanpa nama"; sel.appendChild(o); }); }
+    if(cur) sel.value=cur;
+  });
+}
+function adsProdukTerpilih(id){ var sel=document.getElementById(id); if(!sel||!sel.value) return null; return produkList.find(function(x){return String(x.id)===String(sel.value);})||null; }
+function adsMuatImg(data){ return new Promise(function(res){ if(!data){res(null);return;} var im=new Image(); im.onload=function(){res(im);}; im.onerror=function(){res(null);}; im.src=data; }); }
+function adsUploadFoto(e){
+  var file=e.target.files[0]; if(!file) return;
+  var reader=new FileReader();
+  reader.onload=function(ev){
+    var tmp=new Image();
+    tmp.onload=function(){
+      var maxD=1400,w=tmp.width,h=tmp.height;
+      if(Math.max(w,h)>maxD){ var r=maxD/Math.max(w,h); w=Math.round(w*r); h=Math.round(h*r); }
+      var c=document.createElement("canvas"); c.width=w; c.height=h; c.getContext("2d").drawImage(tmp,0,0,w,h);
+      try{ adsFotoData=c.toDataURL("image/jpeg",0.88); }catch(err){ adsFotoData=ev.target.result; }
+      adsFotoImg=null; adsStatusFoto();
+    };
+    tmp.src=ev.target.result;
+  };
+  reader.readAsDataURL(file); e.target.value="";
+}
+function adsHapusFoto(){ adsFotoData=null; adsFotoImg=null; adsStatusFoto(); }
+function adsStatusFoto(){
+  var st=document.getElementById("ads-foto-status"); if(!st) return;
+  if(adsFotoData){ st.innerHTML='<div style="display:flex;gap:10px;align-items:center;background:#eafaf0;border:1px solid #b6e3c6;border-radius:8px;padding:8px 10px;margin:6px 0"><img src="'+adsFotoData+'" style="width:48px;height:48px;object-fit:cover;border-radius:6px"><div style="font-size:12px;color:#1a7f37"><strong>Foto produk siap dipakai.</strong></div></div>'; }
+  else { st.innerHTML='<p style="font-size:12px;color:#999;margin:6px 0">Belum ada foto upload. Kalau produk udah punya URL foto, otomatis dipakai itu.</p>'; }
+}
+async function adsSiapkanProduk(p){
+  var srcImg=null;
+  if(adsFotoData){ if(!adsFotoImg) adsFotoImg=await adsMuatImg(adsFotoData); srcImg=adsFotoImg; }
+  if(!srcImg && p && p.foto) srcImg=await muatGambar(p.foto);
+  var prodImg=null, cut=null;
+  if(srcImg){ cut=hapusLatar(srcImg); prodImg=(cut&&cut.canvas&&!cut.tainted)?cut.canvas:srcImg; }
+  return { srcImg:srcImg, prodImg:prodImg, cut:cut };
+}
+function adsDimensi(ratio){
+  if(ratio==="4:5") return {w:1080,h:1350};
+  if(ratio==="16:9") return {w:1280,h:720};
+  if(ratio==="9:16") return {w:1080,h:1920};
+  return {w:1080,h:1080};
+}
+function adsAdjust(hex,amt){ var h=String(hex||"#000000").replace("#",""); if(h.length===3) h=h.split("").map(function(c){return c+c;}).join(""); var n=parseInt(h,16); var r=(n>>16)&255,g=(n>>8)&255,b=n&255; var f=function(v){return Math.max(0,Math.min(255,Math.round(v+amt)));}; return "#"+[f(r),f(g),f(b)].map(function(v){return v.toString(16).padStart(2,"0");}).join(""); }
+function adsBg(ctx,w,h,vibe,cmain,cacc,variant){
+  if(vibe==="auto") vibe=["putih","marmer","warm","gelap"][variant%4];
+  if(vibe==="gelap"){ var g=ctx.createLinearGradient(0,0,w,h); g.addColorStop(0,adsAdjust(cmain,-12)); g.addColorStop(1,adsAdjust(cmain,34)); ctx.fillStyle=g; ctx.fillRect(0,0,w,h); ctx.fillStyle="rgba(255,255,255,0.05)"; ctx.beginPath(); ctx.arc(w*0.85,h*0.16,w*0.34,0,Math.PI*2); ctx.fill(); return {text:"#ffffff",sub:"rgba(255,255,255,0.82)"}; }
+  if(vibe==="warm"){ var g2=ctx.createLinearGradient(0,0,0,h); g2.addColorStop(0,"#f7efe6"); g2.addColorStop(1,"#ecdcca"); ctx.fillStyle=g2; ctx.fillRect(0,0,w,h); return {text:"#4a3527",sub:"#7a6552"}; }
+  if(vibe==="marmer"){ var g3=ctx.createLinearGradient(0,0,w,h); g3.addColorStop(0,"#f5f6f8"); g3.addColorStop(1,"#dfe3ea"); ctx.fillStyle=g3; ctx.fillRect(0,0,w,h); ctx.strokeStyle="rgba(150,160,175,0.16)"; ctx.lineWidth=3; for(var i=0;i<5;i++){ ctx.beginPath(); ctx.moveTo(((i*37)%100)/100*w,0); ctx.bezierCurveTo(w*0.3,h*0.3,w*0.7,h*0.6,((i*61)%100)/100*w,h); ctx.stroke(); } return {text:"#1e2530",sub:"#5b6573"}; }
+  var g4=ctx.createLinearGradient(0,0,0,h); g4.addColorStop(0,"#ffffff"); g4.addColorStop(1,"#eef2f7"); ctx.fillStyle=g4; ctx.fillRect(0,0,w,h); return {text:"#1e2530",sub:"#5b6573"};
+}
+function adsGambarBanner(ctx,w,h,p,prodImg,o){
+  var pal=adsBg(ctx,w,h,o.vibe,o.cmain,o.cacc,o.variant);
+  var acc=o.variasi?adsAdjust(o.cacc,[0,20,-20,34][o.variant%4]):o.cacc;
+  var pad=Math.round(Math.min(w,h)*0.06);
+  var horiz=(o.layout==="kiri"||o.layout==="kanan");
+  var prodRect, textRect;
+  if(horiz){
+    if(o.layout==="kiri"){ textRect={x:pad,y:pad,w:w*0.5-pad*1.5,h:h-pad*2}; prodRect={x:w*0.5,y:0,w:w*0.5,h:h}; }
+    else { prodRect={x:0,y:0,w:w*0.5,h:h}; textRect={x:w*0.5+pad*0.5,y:pad,w:w*0.5-pad*1.5,h:h-pad*2}; }
+  } else {
+    if(o.layout==="atas"){ textRect={x:pad,y:pad,w:w-pad*2,h:h*0.42-pad}; prodRect={x:0,y:h*0.42,w:w,h:h*0.58}; }
+    else { prodRect={x:0,y:0,w:w,h:h*0.58}; textRect={x:pad,y:h*0.58+pad*0.4,w:w-pad*2,h:h*0.42-pad}; }
+  }
+  if(prodImg){
+    ctx.save(); ctx.shadowColor="rgba(0,0,0,0.28)"; ctx.shadowBlur=Math.round(w*0.03); ctx.shadowOffsetY=Math.round(h*0.012);
+    var scale=o.variasi?[0.84,0.92,0.78,0.88][o.variant%4]:0.86;
+    var pw=prodRect.w*scale, ph=prodRect.h*scale;
+    drawImageContain(ctx, prodImg, prodRect.x+(prodRect.w-pw)/2, prodRect.y+(prodRect.h-ph)/2, pw, ph);
+    ctx.restore();
+  } else {
+    ctx.fillStyle="rgba(0,0,0,0.10)"; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.font="800 "+Math.round(prodRect.h*0.4)+"px system-ui,sans-serif"; ctx.fillText(String((p&&p.nama)||"?").charAt(0).toUpperCase(), prodRect.x+prodRect.w/2, prodRect.y+prodRect.h/2); ctx.textAlign="left"; ctx.textBaseline="alphabetic";
+  }
+  var baseF=Math.round(Math.min(w,h)*0.052);
+  var tx=textRect.x, ty=textRect.y;
+  var chips=[];
+  if(o.badges.ready) chips.push("READY STOCK");
+  if(o.badges.ongkir) chips.push("GRATIS ONGKIR");
+  if(o.badges.warranty) chips.push("GARANSI RESMI");
+  if(chips.length){ ctx.font="700 "+Math.round(baseF*0.34)+"px system-ui,sans-serif"; var chx=tx, chy=ty; chips.forEach(function(ch){ var cwi=ctx.measureText(ch).width+Math.round(baseF*0.55); if(chx+cwi>tx+textRect.w){ chx=tx; chy+=Math.round(baseF*0.78); } ctx.fillStyle=acc; roundRect(ctx,chx,chy,cwi,Math.round(baseF*0.58),Math.round(baseF*0.29)); ctx.fill(); ctx.fillStyle="#ffffff"; ctx.textBaseline="middle"; ctx.fillText(ch,chx+Math.round(baseF*0.275),chy+Math.round(baseF*0.31)); ctx.textBaseline="alphabetic"; chx+=cwi+Math.round(baseF*0.25); }); ty=chy+Math.round(baseF*0.95); }
+  ctx.fillStyle=acc; ctx.fillRect(tx, ty, Math.round(baseF*1.6), Math.round(baseF*0.18)); ty+=Math.round(baseF*0.55);
+  if(o.badges.official){ ctx.fillStyle=pal.sub; ctx.font="700 "+Math.round(baseF*0.42)+"px system-ui,sans-serif"; ctx.fillText("★ OFFICIAL STORE", tx, ty); ty+=Math.round(baseF*0.7); }
+  ctx.fillStyle=pal.text; ctx.font="800 "+baseF+"px system-ui,sans-serif";
+  ty=wrapText(ctx, (p&&p.nama)||"Produk", tx, ty+baseF, textRect.w, Math.round(baseF*1.05), o.density==="padat"?3:2)+Math.round(baseF*0.2);
+  if(o.density!=="minimal"){ var hook=(typeof heroAngleFungsi==="function"?heroAngleFungsi(p).hook:""); if(hook){ ctx.fillStyle=pal.sub; ctx.font="600 "+Math.round(baseF*0.5)+"px system-ui,sans-serif"; ty=wrapText(ctx, hook, tx, ty+Math.round(baseF*0.55), textRect.w, Math.round(baseF*0.62), 2)+Math.round(baseF*0.3); } }
+  if(o.badges.bullets && o.density!=="minimal"){ var sp=sellingPointFungsi(p).slice(0,o.density==="padat"?3:2); ctx.font="500 "+Math.round(baseF*0.42)+"px system-ui,sans-serif"; sp.forEach(function(s){ ctx.fillStyle=acc; ctx.fillText("✓", tx, ty+Math.round(baseF*0.4)); ctx.fillStyle=pal.sub; var endY=wrapText(ctx,(s.length>58?s.slice(0,58)+"…":s),tx+Math.round(baseF*0.7),ty+Math.round(baseF*0.4),textRect.w-Math.round(baseF*0.7),Math.round(baseF*0.55),2); ty=endY+Math.round(baseF*0.2); }); ty+=Math.round(baseF*0.1); }
+  if(o.badges.dimensi && o.dimensiTxt){ ctx.fillStyle=pal.sub; ctx.font="600 "+Math.round(baseF*0.42)+"px system-ui,sans-serif"; ctx.fillText("Ukuran: "+o.dimensiTxt, tx, ty+Math.round(baseF*0.4)); ty+=Math.round(baseF*0.82); }
+  if(o.badges.harga){ var hargaTxt=(p&&(p.hargaJual||0)>0)?formatRupiahFull(p.hargaJual):(formatRupiahFull((p&&p.omset)||0)+" omset"); ctx.font="800 "+Math.round(baseF*0.72)+"px system-ui,sans-serif"; var pw2=ctx.measureText(hargaTxt).width+Math.round(baseF*0.9); ctx.fillStyle=acc; roundRect(ctx,tx,ty,pw2,Math.round(baseF*1.15),Math.round(baseF*0.22)); ctx.fill(); ctx.fillStyle="#ffffff"; ctx.textBaseline="middle"; ctx.fillText(hargaTxt,tx+Math.round(baseF*0.45),ty+Math.round(baseF*0.6)); ctx.textBaseline="alphabetic"; ty+=Math.round(baseF*1.5); }
+  if(o.badges.cta){ var cta="BELI SEKARANG"; ctx.font="700 "+Math.round(baseF*0.46)+"px system-ui,sans-serif"; var cw=ctx.measureText(cta).width+Math.round(baseF*1.1); ctx.fillStyle=pal.text; roundRect(ctx,tx,ty,cw,Math.round(baseF*1.0),Math.round(baseF*0.5)); ctx.fill(); ctx.fillStyle="#ffffff"; ctx.textBaseline="middle"; ctx.fillText(cta,tx+Math.round(baseF*0.55),ty+Math.round(baseF*0.52)); ctx.textBaseline="alphabetic"; ty+=Math.round(baseF*1.3); }
+}
+async function adsRenderKatalog(){
+  var el=document.getElementById("ads-katalog-hasil");
+  var p=adsProdukTerpilih("ads-studio-produk");
+  if(!p && !adsFotoData){ alert("Pilih produk dulu atau upload foto produk."); return; }
+  adsIsiProduk();
+  el.innerHTML='<p style="color:#888;font-size:13px">Lagi nyusun banner... ngangkat foto produk &amp; komposisi layout.</p>';
+  var prep=await adsSiapkanProduk(p);
+  var o={ layout:adsVal("ads-layout"), density:adsVal("ads-density"), vibe:adsVal("ads-vibe"), cmain:adsVal("ads-cmain")||"#111827", cacc:adsVal("ads-cacc")||"#ee4d2d", badges:{cta:adsChk("ads-cta"),harga:adsChk("ads-harga"),bullets:adsChk("ads-bullets"),warranty:adsChk("ads-warranty"),ready:adsChk("ads-ready"),official:adsChk("ads-official"),ongkir:adsChk("ads-ongkir"),dimensi:adsChk("ads-dimensi")}, dimensiTxt:adsVal("ads-dimensi-txt"), variasi:adsChk("ads-variasi") };
+  var dim=adsDimensi(adsVal("ads-ratio"));
+  var qty=parseInt(adsVal("ads-qty"),10)||1; if(qty<1)qty=1; if(qty>6)qty=6;
+  var canvases=[];
+  for(var i=0;i<qty;i++){ var c=document.createElement("canvas"); c.width=dim.w; c.height=dim.h; var oo=Object.assign({},o,{variant:i}); adsGambarBanner(c.getContext("2d"),dim.w,dim.h,p||{nama:"Produk"},prep.prodImg,oo); canvases.push(c); }
+  el.innerHTML="";
+  var info=document.createElement("p"); info.style.cssText="font-size:13px;color:#555;margin-bottom:10px"; info.innerHTML="<strong>"+canvases.length+" banner</strong> ("+dim.w+"×"+dim.h+") siap. Tinggal download terus upload ke Shopee/TikTok/sosmed."+((!prep.prodImg)?" <span style='color:#c1271e'>Catatan: foto produk belum kebaca (CORS/URL), banner pakai inisial nama — upload foto manual biar produknya muncul.</span>":""); el.appendChild(info);
+  var allBtn=document.createElement("button"); allBtn.textContent="⬇️ Download Semua"; allBtn.style.cssText="margin-bottom:12px"; allBtn.onclick=function(){ canvases.forEach(function(c,idx){ setTimeout(function(){ unduhCanvas(c,"banner-"+(idx+1)+".png"); }, idx*450); }); }; el.appendChild(allBtn);
+  var wrap=document.createElement("div"); wrap.style.cssText="display:flex;gap:14px;flex-wrap:wrap"; canvases.forEach(function(c,idx){ c.style.cssText="width:240px;max-width:46%;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.15)"; var cell=document.createElement("div"); cell.style.cssText="text-align:center"; cell.appendChild(c); var b=document.createElement("button"); b.className="ghost"; b.textContent="⬇️ Banner "+(idx+1); b.style.cssText="display:block;margin:6px auto 0;font-size:12px"; b.onclick=function(){ unduhCanvas(c,"banner-"+(idx+1)+".png"); }; cell.appendChild(b); wrap.appendChild(cell); }); el.appendChild(wrap);
+}
+function adsGambarDetail(ctx,w,h,p,prodImg,gaya,acc){
+  ctx.fillStyle="#ffffff"; ctx.fillRect(0,0,w,h);
+  var sp=sellingPointFungsi(p).slice(0,4);
+  if(gaya==="macro"){
+    if(prodImg){ drawImageCover(ctx,prodImg,0,0,w,h*0.62); } else { var g=ctx.createLinearGradient(0,0,w,h*0.62); g.addColorStop(0,adsAdjust(acc,40)); g.addColorStop(1,acc); ctx.fillStyle=g; ctx.fillRect(0,0,w,h*0.62); }
+    ctx.fillStyle="#111827"; ctx.font="800 56px system-ui,sans-serif"; var ay=wrapText(ctx,(p&&p.nama)||"Produk",60,h*0.62+80,w-120,62,2);
+    ctx.fillStyle=acc; ctx.font="700 30px system-ui,sans-serif"; wrapText(ctx,"Detail material & tekstur — "+(sp[0]||"kualitas terjamin"),60,ay+44,w-120,38,3);
+    return;
+  }
+  var infografis=(gaya==="infografis");
+  var imgX=infografis?60:w*0.5; var imgW=infografis?w*0.44:w*0.5-60;
+  if(prodImg){ ctx.save(); ctx.shadowColor="rgba(0,0,0,0.22)"; ctx.shadowBlur=30; ctx.shadowOffsetY=12; drawImageContain(ctx,prodImg,imgX,120,imgW,h-240); ctx.restore(); }
+  else { ctx.fillStyle="#eef2f7"; ctx.fillRect(imgX,120,imgW,h-240); }
+  var tx=infografis?(w*0.52):60; var tw=infografis?(w*0.42):(w*0.5-80);
+  ctx.fillStyle=acc; ctx.fillRect(tx,110,90,12);
+  ctx.fillStyle="#111827"; ctx.font="800 50px system-ui,sans-serif"; var ty=wrapText(ctx,(p&&p.nama)||"Produk",tx,180,tw,56,2)+10;
+  ctx.font="500 30px system-ui,sans-serif";
+  sp.forEach(function(s){ ctx.fillStyle=acc; ctx.beginPath(); ctx.arc(tx+12,ty+14,9,0,Math.PI*2); ctx.fill(); ctx.fillStyle="#374151"; var ey=wrapText(ctx,(s.length>70?s.slice(0,70)+"…":s),tx+36,ty+24,tw-36,38,3); ty=ey+18; });
+  if((p&&(p.hargaJual||0)>0)){ ctx.fillStyle=acc; ctx.font="800 46px system-ui,sans-serif"; ctx.fillText(formatRupiahFull(p.hargaJual),tx,Math.min(ty+50,h-70)); }
+}
+async function adsRenderDetail(){
+  var el=document.getElementById("ads-detail-hasil");
+  var p=adsProdukTerpilih("ads-detail-produk");
+  if(!p && !adsFotoData){ alert("Pilih produk dulu atau upload foto di tab Katalog."); return; }
+  adsIsiProduk();
+  el.innerHTML='<p style="color:#888;font-size:13px">Lagi nyusun slide detail kegunaan...</p>';
+  var prep=await adsSiapkanProduk(p);
+  var gaya=adsVal("ads-detail-gaya")||"editorial";
+  var acc=adsVal("ads-cacc")||"#ee4d2d";
+  var c=document.createElement("canvas"); c.width=1080; c.height=1080; adsGambarDetail(c.getContext("2d"),1080,1080,p||{nama:"Produk"},prep.prodImg,gaya,acc);
+  el.innerHTML="";
+  var info=document.createElement("p"); info.style.cssText="font-size:13px;color:#555;margin-bottom:10px"; info.innerHTML="Slide detail kegunaan (1080×1080) siap — fokus spesifikasi & fungsi produk."; el.appendChild(info);
+  c.style.cssText="width:100%;max-width:420px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.15);display:block;margin-bottom:10px"; el.appendChild(c);
+  var b=document.createElement("button"); b.textContent="⬇️ Download Slide Detail"; b.onclick=function(){ unduhCanvas(c,"detail-kegunaan.png"); }; el.appendChild(b);
+}
+function adsEditorUpload(e){
+  var file=e.target.files[0]; if(!file) return;
+  var reader=new FileReader();
+  reader.onload=function(ev){ var im=new Image(); im.onload=function(){ adsEditorImg=im; adsEditorCanvas=null; adsEditorTampil(im,"Foto asli dimuat. Pilih aksi di atas."); }; im.src=ev.target.result; };
+  reader.readAsDataURL(file); e.target.value="";
+}
+function adsEditorTampil(srcCanvasOrImg, caption){
+  var el=document.getElementById("ads-editor-hasil"); if(!el) return;
+  el.innerHTML="";
+  var info=document.createElement("p"); info.style.cssText="font-size:13px;color:#555;margin-bottom:10px"; info.innerHTML=caption||""; el.appendChild(info);
+  var disp=document.createElement("img"); disp.src=(srcCanvasOrImg.toDataURL?srcCanvasOrImg.toDataURL("image/png"):srcCanvasOrImg.src); disp.style.cssText="width:100%;max-width:360px;border-radius:12px;border:1px solid #eee;display:block;margin-bottom:10px"; el.appendChild(disp);
+  if(adsEditorCanvas){ var b=document.createElement("button"); b.textContent="⬇️ Download Hasil"; b.onclick=function(){ unduhCanvas(adsEditorCanvas,"editor-foto.png"); }; el.appendChild(b); }
+}
+function adsEditorAksi(tipe){
+  if(!adsEditorImg){ alert("Upload foto dulu di tab Editor."); return; }
+  var base=adsEditorCanvas||adsEditorImg;
+  if(tipe==="latar"){
+    var cut=hapusLatar(adsEditorImg);
+    if(!cut||!cut.canvas||cut.tainted){ alert("Foto nggak bisa diproses (kemungkinan dari URL keblok CORS). Upload file langsung ya."); return; }
+    var size=1080; var c=document.createElement("canvas"); c.width=size; c.height=size; var ctx=c.getContext("2d"); ctx.fillStyle="#ffffff"; ctx.fillRect(0,0,size,size); var pr=cut.canvas.width/cut.canvas.height; var t=size*0.82,dw,dh; if(pr>1){dw=t;dh=t/pr;}else{dh=t;dw=t*pr;} ctx.drawImage(cut.canvas,(size-dw)/2,(size-dh)/2,dw,dh); adsEditorCanvas=c; adsEditorTampil(c,"Latar diangkat & dibikin putih bersih (1080×1080).");
+  } else if(tipe==="enhance"){
+    var cut2=hapusLatar(adsEditorImg); var m=(cut2&&cut2.metrik)?cut2.metrik:{}; var c2=document.createElement("canvas"); var iw=adsEditorImg.width,ih=adsEditorImg.height; var mx=1200; if(Math.max(iw,ih)>mx){var r=mx/Math.max(iw,ih);iw=Math.round(iw*r);ih=Math.round(ih*r);} c2.width=iw; c2.height=ih; var x2=c2.getContext("2d"); var filter=""; if(m.terang!=null){ if(m.terang<100) filter+="brightness("+Math.min(1.5,Math.max(1.05,125/m.terang)).toFixed(2)+") "; else if(m.terang>235) filter+="brightness("+Math.max(0.7,Math.min(0.97,220/m.terang)).toFixed(2)+") "; } if(m.kontras!=null && m.kontras<28) filter+="contrast(1.15) "; if(m.saturasi!=null && m.saturasi>=0.04 && m.saturasi<0.12) filter+="saturate(1.25) "; if(!filter.trim()) filter="contrast(1.06) saturate(1.08)"; try{ x2.filter=filter.trim(); }catch(e){} x2.drawImage(adsEditorImg,0,0,iw,ih); try{x2.filter="none";}catch(e){} adsEditorCanvas=c2; adsEditorTampil(c2,"Auto-enhance: "+filter.trim()+".");
+  } else if(tipe==="resize"){
+    var ratio=adsVal("ads-editor-ratio")||"9:16"; var dim=adsDimensi(ratio); var c3=document.createElement("canvas"); c3.width=dim.w; c3.height=dim.h; var x3=c3.getContext("2d"); var srcImg=(base.toDataURL)?base:adsEditorImg; x3.save(); try{x3.filter="blur(28px)";}catch(e){} drawImageCover(x3,srcImg,-40,-40,dim.w+80,dim.h+80); x3.restore(); x3.fillStyle="rgba(255,255,255,0.30)"; x3.fillRect(0,0,dim.w,dim.h); drawImageContain(x3,srcImg,dim.w*0.08,dim.h*0.08,dim.w*0.84,dim.h*0.84); adsEditorCanvas=c3; adsEditorTampil(c3,"Smart resize ke "+ratio+" (background blur biar nggak gepeng).");
+  }
+}
+try { adsIsiProduk(); adsStatusFoto(); adsTab('katalog'); } catch(e) {}
 </script>
 </body>
 </html>
