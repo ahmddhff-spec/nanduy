@@ -57,20 +57,28 @@
 .acc-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
 .acc-ico { font-size: 13px; color: #9ca3af; transition: transform .2s; }
 .card:not(.collapsed) .acc-ico { transform: rotate(90deg); }
+.hero-note { background: linear-gradient(135deg,#eef4ff,#f8fbff); border: 1px solid #dbe7ff; color: #334155; border-radius: 14px; padding: 12px 14px; font-size: 12px; line-height: 1.7; margin-bottom: 14px; }
+.command-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px; margin-bottom:14px; }
+.command-box { background:#fff; border:1px solid #eef1f5; border-radius:14px; padding:14px; }
+.command-box h3 { font-size:13px; margin-bottom:6px; color:#111827; }
+.command-box p, .command-box li { font-size:12px; color:#475569; line-height:1.65; }
+.tool-stack { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+.tool-pill { display:inline-flex; align-items:center; padding:6px 10px; border-radius:999px; background:#f8fafc; border:1px solid #e2e8f0; font-size:11px; font-weight:600; color:#475569; }
+.decision-callout { border-left:4px solid #4f46e5; background:#f8faff; border-radius:0 12px 12px 0; padding:12px 14px; margin-bottom:14px; font-size:13px; line-height:1.7; color:#334155; }
     @media (max-width: 800px) { .stats { grid-template-columns: repeat(2, 1fr); } table { font-size: 11px; } }
   </style>
 </head>
 <body>
   <header>
     <h1>🛒 Riset Produk Potensial</h1>
-    <p>Dashboard analisis produk e-commerce — Level High / Mid / Low otomatis</p>
+    <p>Command center Shopee & TikTok buat mutusin produk, iklan, stok, profit, dan konten dalam 1 dashboard</p>
   </header>
 
   <!-- Quick batch nav (biar gak perlu scroll) -->
   <section class="card" id="batch-nav-card" style="position:sticky;top:10px;z-index:99;padding:12px 14px">
     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
       <div style="font-weight:800;color:#111827">🧭 Navigasi Panel</div>
-      <div style="font-size:12px;color:#6b7280">Klik buat buka 1 panel aja (yang lain auto ketutup).</div>
+      <div style="font-size:12px;color:#6b7280">Mode ringkas: buka 1 panel yang lagi mau dikerjain, biar fokus & nggak tenggelam sama tools.</div>
       <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
         <button class="ghost" id="btn-prev-panel" type="button">◀ Prev</button>
         <button class="ghost" id="btn-next-panel" type="button">Next ▶</button>
@@ -87,9 +95,9 @@
 <li><strong>Isi data produk dulu.</strong> Scroll ke <strong>➕ Tambah Produk</strong> buat input manual, atau klik <strong>⬆️ Import Produk</strong> di bawah buat upload Excel/CSV laporan tokomu. Kolom penting: Omset, Pesanan, CVR, Repeat Rate, Stok, Harga Jual, <strong>Modal/HPP</strong> (biar laba &amp; margin kehitung).</li>
 <li><strong>(Opsional) Import data iklan.</strong> Klik <strong>📣 Import Data Iklan</strong> buat masukin laporan iklan Shopee (CPC/GMV). ROAS, ACOS &amp; rekomendasi per campaign muncul otomatis.</li>
 <li><strong>Set target omset bulanan.</strong> Di panel <strong>🎯 Target Omset Bulanan</strong> (tepat di bawah), isi target lalu klik Simpan. Progress bar + setoran harian langsung kehitung.</li>
-<li><strong>Baca keputusan AI.</strong> Panel <strong>🧠 Keputusan AI Spesialis</strong> kasih skor kesehatan toko + langkah prioritas. Tiap produk dapet 1 vonis (Scale, Restock, Benahi, dll).</li>
+<li><strong>Baca decision maker.</strong> Panel <strong>🧠 Decision Maker — Shopee & TikTok</strong> kasih skor kesehatan toko + langkah prioritas. Tiap produk dapet 1 vonis (Scale, Restock, Benahi, dll).</li>
 <li><strong>Pantau tren tiap minggu.</strong> Klik <strong>Simpan Snapshot Minggu Ini</strong> di panel Tren Antar-Minggu. Makin rutin, makin akurat grafik, evaluasi bulanan, &amp; proyeksinya.</li>
-<li><strong>Manfaatin tool tambahan:</strong> 💎 Hidden Gems (produk potensial), 📦 Analisis ABC, 🔑 Koreksi Kata Kunci + Generator Judul SEO, 🎨 Generator Konten Promo, 🛒 Kalkulator Shopee (profit bersih), 🔍 Studio koreksi foto.</li>
+<li><strong>Manfaatin tool tambahan:</strong> 💎 Hidden Gems (produk potensial), 📦 Analisis ABC, 📣 Playbook Ads Shopee &amp; TikTok, 🔑 SEO Judul &amp; Riset Kata Kunci, 🎨 Creative Generator, 🛒 Kalkulator Profit Shopee, 🔍 Studio Kreatif.</li>
 <li><strong>Tarik laporan.</strong> Panel <strong>📋 Laporan Mingguan</strong> bikin ringkasan siap-tempel ke WhatsApp/Slack. Tinggal klik Copy.</li>
 </ol>
 <p style="font-size:12px;color:#888;margin-top:10px">💡 Data tersimpan otomatis di browser ini (localStorage). Klik <strong>💾 Backup Data</strong> di paling bawah buat nyimpen cadangan file, &amp; <strong>♻️ Restore Data</strong> buat balikin di browser/HP lain — biar nggak kehilangan data produkmu.</p>
@@ -102,19 +110,24 @@
 </div>
 <div id="target"></div>
 </section>
+<section class="card" id="command-card">
+<h2>🧭 Command Center — CEO Mode</h2>
+<p style="font-size:13px;color:#666;margin-bottom:12px">Ini panel pengarah utama. Gue rapihin biar kamu bisa lihat prioritas Shopee, TikTok, operasional, dan tools yang mesti dibuka tanpa mikir ulang.</p>
+<div id="command-center"></div>
+</section>
 <section class="card" id="ai-card" style="border:1px solid #2383e2">
-<h2>🧠 Keputusan AI Spesialis E-commerce</h2>
-<p style="font-size:13px;color:#666;margin-bottom:12px">Analisa ala spesialis e-commerce 10 tahun pengalaman — langsung kasih keputusan & prioritas aksi dari data kamu.</p>
+<h2>🧠 Decision Maker — Shopee & TikTok</h2>
+<p style="font-size:13px;color:#666;margin-bottom:12px">Panel keputusan inti: gue pakai pola pikir operator e-commerce buat nentuin mana yang wajib di-scale, dibenahi, di-pause, atau di-drop.</p>
 <div id="ai-spesialis"></div>
 </section>
 <section class="card" id="profit-card">
 <h2>💰 Analisis Profit & Margin</h2>
-<p style="font-size:13px;color:#666;margin-bottom:12px">Omset gede belum tentu cuan. Isi kolom <strong>Modal / HPP</strong> tiap produk, nanti laba kotor, margin, &amp; laba bersih setelah iklan kehitung otomatis di sini.</p>
+<p style="font-size:13px;color:#666;margin-bottom:12px">Omset gede belum tentu cuan. Panel ini gue posisiin jadi filter wajib sebelum scale: cek margin, cek iklan, baru gas budget.</p>
 <div id="profit"></div>
 </section>
 <section class="card" id="kalkulator-card">
-<h2>🛒 Kalkulator Shopee — Profit Bersih per Produk</h2>
-<p style="font-size:13px;color:#666;margin-bottom:12px">Hitung profit bersih beneran setelah SEMUA potongan Shopee (admin, layanan/program, iklan, pajak iklan) + ongkos lain. Isi angkanya manual, atau pilih produk biar harga &amp; modal keisi otomatis.</p>
+<h2>🛒 Kalkulator Profit Shopee</h2>
+<p style="font-size:13px;color:#666;margin-bottom:12px">Tool hitung cepat buat validasi harga jual, profit bersih, dan margin aman sebelum kamu jalanin promo atau scale iklan.</p>
 <div style="margin-bottom:14px"><label style="max-width:440px">Ambil dari produk (opsional) <select id="kalk-produk" onchange="kalkIsiProduk()"></select></label></div>
 <div class="grid">
 <label>Harga Jual / pcs (Rp) <input type="number" id="kalk-harga" min="0" placeholder="cth: 75000" /></label>
@@ -161,9 +174,9 @@
 <div id="forecast"></div>
 </section>
 <section class="card" id="analisis-card">
-    <h2>🤖 Analisis Otomatis</h2>
-    <div id="analisis"></div>
-  </section>
+<h2>🧭 Insight Toko & Portfolio</h2>
+<div id="analisis"></div>
+</section>
 
   <section class="card" id="abc-card">
 <h2>📦 Analisis ABC (Pareto 80/20)</h2>
@@ -189,15 +202,15 @@
     <textarea id="laporan" readonly style="width:100%;min-height:280px;font-family:monospace;font-size:12px;padding:12px;border:1px solid #ddd;border-radius:8px;background:#fafafa;white-space:pre"></textarea>
   </section>
 
-  <section class="card" id="ads-card">
-    <h2>📣 Strategi Ads & Marketing</h2>
-    <p style="font-size:13px;color:#666;margin-bottom:12px">Rekomendasi strategi iklan otomatis, dikelompokin per tujuan. Tinggal eksekusi.</p>
-    <div id="ads"></div>
-  </section>
+<section class="card" id="ads-card">
+<h2>📣 Playbook Ads Shopee & TikTok</h2>
+<p style="font-size:13px;color:#666;margin-bottom:12px">Gue rapihin jadi playbook eksekusi: mana produk buat scale, mana buat testing, mana buat konten TikTok, dan mana yang jangan dibakar budget dulu.</p>
+<div id="ads"></div>
+</section>
 
-  <section class="card" id="studio-card">
-<h2>🔍 Studio — Koreksi Gambar & Selling Point</h2>
-<p style="font-size:13px;color:#666;margin-bottom:12px">Upload foto produk (boleh + gambar referensi sebagai pembanding), pilih produk, lalu klik <strong>Koreksi & Saran Gambar</strong>. AI bakal kasih: <strong>selling point berbasis fungsi/manfaat</strong> (bukan kesan mewah) + <strong>koreksi foto</strong> biar lebih jualan.</p>
+<section class="card" id="studio-card">
+<h2>🔍 Studio Kreatif — Foto & Selling Point</h2>
+<p style="font-size:13px;color:#666;margin-bottom:12px">Tool kreatif buat ngerapihin foto produk & angle jualan. Fokusnya fungsi, manfaat, dan bahan konten yang bisa dipakai buat Shopee, TikTok, atau iklan.</p>
 <div style="font-size:12px;color:#888;margin-bottom:6px">1. Upload foto produk (yang diambil cuma gambar produknya — paling bagus foto background putih/polos. Opsional kalau produk sudah punya URL foto):</div>
 <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
 <button class="ghost" onclick="document.getElementById('file-bg').click()">🖼️ Upload Foto Produk</button>
@@ -218,7 +231,7 @@
 <div id="studio-preview" style="margin-top:14px"></div>
 </section>
 <section class="card" id="keyword-card">
-<h2>🔑 Koreksi Kata Kunci (Judul Produk)</h2>
+<h2>🔑 SEO Judul & Riset Kata Kunci</h2>
 <p style="font-size:13px;color:#666;margin-bottom:12px">AI nganalisa judul produk kamu: deteksi kata kunci yang dobel/keyword stuffing, kasih versi judul yang lebih rapi & SEO-friendly buat Shopee, plus saran kata kunci tambahan. Pilih produk atau tempel judul manual.</p>
 <div style="margin-bottom:14px"><div style="font-size:12px;color:#888;margin-bottom:6px">Mau kata kunci yang gimana?</div><div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="kw-mode-btn" data-mode="luas" onclick="setKwMode('luas')">Luas</button><button type="button" class="kw-mode-btn active" data-mode="campur" onclick="setKwMode('campur')">Campur</button><button type="button" class="kw-mode-btn" data-mode="spesifik" onclick="setKwMode('spesifik')">Spesifik</button></div><div style="font-size:11px;color:#999;margin-top:5px">Luas = jangkauan gede, saingan ketat. Spesifik = pencari lebih dikit tapi niat beli. Campur = dua-duanya.</div></div>
 <div style="font-size:12px;color:#888;margin-bottom:6px">Pilih produk (judulnya keisi otomatis):</div>
@@ -235,8 +248,8 @@
 <div id="kw-bulk-hasil" style="margin-top:14px"></div>
 </section>
 <section class="card" id="promo-card">
-    <h2>🎨 Generator Konten Promo</h2>
-    <p style="font-size:13px;color:#666;margin-bottom:12px">Bikin gambar promo siap-posting dari data produkmu — carousel buat feed Instagram/Shopee & hero banner buat toko/iklan. Hasilnya langsung bisa di-download PNG.</p>
+<h2>🎨 Creative Generator</h2>
+<p style="font-size:13px;color:#666;margin-bottom:12px">Tool bikin materi promo cepat dari data produk: carousel, banner, dan konten visual yang siap dipakai buat Shopee, TikTok, atau sosial media.</p>
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
       <button onclick="buatCarousel()">🖼️ Buat Carousel (Top 5)</button>
       <button onclick="buatHero()">🏞️ Buat Hero Banner</button>
@@ -370,16 +383,19 @@ let chartTren = null, chartKat = null, chartLevel = null, chartRoas = null, char
       return { label: "🔴 Low Level", kelas: "level-low", key: "low" };
     }
     function fokusPerbaikan(p) {
-      if (hitungSkorTotal(p) === 0 && !p.omset && !p.cvr && !p.repeat) return { teks: "Belum dinilai", ok: false };
-      const saran = [];
-      if (p.permintaan > 0 && p.permintaan <= 2) saran.push("Permintaan rendah: cari produk yang lebih dicari.");
-      if (p.kompetisi > 0 && p.kompetisi <= 2) saran.push("Kompetisi ketat: cari diferensiasi / niche lebih sepi.");
-      if (p.tren > 0 && p.tren <= 2) saran.push("Tren menurun: cari produk yang lagi naik.");
-      if ((p.pesanan || 0) === 0 && (p.omset || 0) === 0) saran.push("Belum ada penjualan: evaluasi listing/iklan atau pertimbangkan drop.");
-      if (p.cvr > 0 && p.cvr < 2) saran.push("CVR rendah: perbaiki foto, judul, harga, & deskripsi listing.");
-      if (p.repeat > 0 && p.repeat < 10) saran.push("Repeat rate rendah: tingkatkan kualitas & after-sales.");
-      if (saran.length === 0) return { teks: "✅ Semua faktor sudah kuat, pertahankan!", ok: true };
-      return { teks: saran.join(" "), ok: false };
+if (hitungSkorTotal(p) === 0 && !p.omset && !p.cvr && !p.repeat && !(p.tampilan || 0) && !(p.klik || 0)) return { teks: "Belum dinilai", ok: false };
+const diag = diagnosaListingSpesifik(p);
+if (diag.code === "healthy") return { teks: "✅ Listing sehat: aman ditambah exposure bertahap.", ok: true };
+const saran = [];
+if (diag.short) saran.push(diag.short);
+if (p.permintaan > 0 && p.permintaan <= 2) saran.push("Permintaan rendah: cari produk yang lebih dicari.");
+if (p.kompetisi > 0 && p.kompetisi <= 2) saran.push("Kompetisi ketat: cari diferensiasi / niche lebih sepi.");
+if (p.tren > 0 && p.tren <= 2) saran.push("Tren menurun: cari produk yang lagi naik.");
+if ((p.pesanan || 0) === 0 && (p.omset || 0) === 0) saran.push("Belum ada penjualan: evaluasi listing/iklan atau pertimbangkan drop.");
+if (p.cvr > 0 && p.cvr < 2 && diag.code !== "priceTrust" && diag.code !== "closing" && diag.code !== "listingLeak") saran.push("CVR rendah: berarti orang udah masuk tapi belum checkout — cek harga, trust, dan foto detail.");
+if (p.repeat > 0 && p.repeat < 10) saran.push("Repeat rate rendah: tingkatkan kualitas & after-sales.");
+if (saran.length === 0) return { teks: "✅ Semua faktor sudah kuat, pertahankan!", ok: true };
+return { teks: saran.join(" "), ok: false };
     }
     function stokAda(p) { return p.stok == null || (p.stok || 0) > 0; }
 function adaDataStok() { return produkList.some((p) => p.stok != null); }
@@ -394,7 +410,26 @@ function formatRupiah(n) {
     function roasNilai(p) { return (p.roas && p.roas > 0) ? p.roas : ((p.biayaIklan || 0) > 0 ? (p.omsetIklan || 0) / p.biayaIklan : 0); }
     function roasTxt(p) { const r = roasNilai(p); return r > 0 ? r.toFixed(2) + "x" : "-"; }
 
-    function simpan() { localStorage.setItem(STORAGE_KEY, JSON.stringify(produkList)); }
+function ctrProduk(p) { return (p.tampilan || 0) > 0 ? ((p.klik || 0) / (p.tampilan || 1)) * 100 : 0; }
+function diagnosaListingSpesifik(p) {
+const tampil = p.tampilan || 0;
+const klik = p.klik || 0;
+const cvr = p.cvr || 0;
+const pesanan = p.pesanan || 0;
+const adaIklanP = (p.biayaIklan || 0) > 0;
+const roas = (p.roas && p.roas > 0) ? p.roas : (adaIklanP ? (p.omsetIklan || 0) / p.biayaIklan : 0);
+const ctr = ctrProduk(p);
+const hargaTxt = (p.hargaJual || 0) > 0 ? formatRupiah(p.hargaJual) : "harga jual";
+if (tampil >= 500 && ctr > 0 && ctr < 0.8) return { code: "thumbnail", short: "Impresi tinggi tapi CTR rendah: ganti foto utama + 5 kata awal judul.", long: "Impresi udah tinggi tapi CTR cuma " + ctr.toFixed(2) + "%. Ini masalah hook awal: foto utama kurang nendang, 5 kata pertama judul belum kena intent, atau harga " + hargaTxt + " kalah menarik dari thumbnail kompetitor. Prioritas: ganti foto utama jadi lebih close-up/kontras, munculin fungsi utama, dan rapihin kata pembuka judul." };
+if (klik >= 25 && pesanan === 0) return { code: "closing", short: "Klik masuk tapi belum jadi order: cek harga, voucher, rating, dan trust.", long: "Klik udah masuk " + klik + " tapi belum jadi order. Berarti masalahnya bukan di traffic, tapi di conversion. Biasanya yang nahan itu harga, ongkir, rating/review, foto detail, variasi, atau trust. Bandingin harga " + hargaTxt + " sama kompetitor, tambahin voucher/bonus, tampilkan ukuran/isi paket, dan perjelas benefit utama." };
+if (klik >= 20 && cvr > 0 && cvr < 1.5) return { code: "priceTrust", short: "Klik ada tapi CVR rendah: revisi harga, ongkir, foto detail, & deskripsi.", long: "Traffic udah ada (klik " + klik + ") tapi CVR baru " + cvr + "%. Artinya orang tertarik masuk, tapi belum cukup yakin buat checkout. Fokus ke 5 hal: 1) cek harga vs kompetitor, 2) kasih voucher/promo ongkir, 3) tambah foto detail ukuran/isi paket, 4) perjelas deskripsi manfaat, 5) dorong review biar trust naik." };
+if (adaIklanP && roas > 0 && roas < 2 && ctr >= 1 && cvr < 2) return { code: "listingLeak", short: "Iklan rugi karena listing belum closing: jangan naikin budget dulu.", long: "ROAS baru " + roas.toFixed(1) + "x padahal CTR " + ctr.toFixed(2) + "% udah lumayan. Jadi masalahnya bukan orang nggak mau klik, tapi halaman produk belum nutup penjualan. Benahi harga, foto detail, variasi, bundling, deskripsi, dan review dulu sebelum budget dinaikin." };
+if (adaIklanP && roas > 0 && roas < 2 && tampil >= 300 && ctr < 1) return { code: "hookLeak", short: "Iklan rugi dari sisi hook: ganti visual, keyword, dan opening judul.", long: "ROAS " + roas.toFixed(1) + "x dan CTR cuma " + ctr.toFixed(2) + "%. Ini tanda masalah di hook awal: visual kurang narik, keyword terlalu lebar/nggak nyambung, atau judul depan belum tepat. Ganti foto utama, sempitin keyword, dan fokusin judul ke fungsi paling dicari." };
+if (pesanan > 0 && cvr >= 2 && ((roas >= 3) || !adaIklanP)) return { code: "healthy", short: "Listing sehat: aman buat ditambah exposure pelan-pelan.", long: "CTR/CVR udah cukup sehat. Fokus berikutnya bukan bongkar listing besar-besaran, tapi tambah exposure bertahap, jaga stok, dan bikin variasi/bundle biar AOV naik." };
+if (p.repeat > 0 && p.repeat < 10) return { code: "retention", short: "Order ada tapi repeat rendah: benahi kualitas & after-sales.", long: "Produk udah laku, tapi repeat baru " + p.repeat + "%. Artinya masalah berikutnya ada di kepuasan produk, packaging, atau follow-up pembeli. Coba kasih insert card, bonus kecil, edukasi pemakaian, atau follow-up chat buat naikin repeat." };
+return { code: "general", short: "Perlu cek foto, judul, harga, dan trust listing.", long: "Belum ada sinyal yang cukup tajam, jadi cek 4 fondasi dulu: foto utama, judul + keyword, harga vs kompetitor, dan trust (rating/review/deskripsi)." };
+}
+function simpan() { localStorage.setItem(STORAGE_KEY, JSON.stringify(produkList)); }
 
     function ambilForm() {
       const num = (id) => { const v = parseFloat(document.getElementById(id).value); return isNaN(v) ? 0 : v; };
@@ -753,7 +788,8 @@ if (d.catatan) ada.catatan = d.catatan;
         tbody.appendChild(tr);
       });
 
-      renderAnalisis();
+renderCommandCenter();
+renderAnalisis();
       renderHiddenGems();
       renderIklan();
       renderLaporan();
@@ -771,7 +807,62 @@ renderKwSelect();
   kalkAmbilProdukOptions();
     }
 
-    function renderAnalisis() {
+    function renderCommandCenter() {
+const el = document.getElementById("command-center");
+if (!el) return;
+if (produkList.length === 0) {
+el.innerHTML = '<div class="hero-note"><strong>Start di sini:</strong> isi/import produk dulu, terus set target omset. Setelah itu panel ini bakal otomatis ngarahin kamu panel mana yang paling penting dibuka hari ini.</div><div class="tool-stack"><span class="tool-pill">1. Input / Import Produk</span><span class="tool-pill">2. Set Target</span><span class="tool-pill">3. Buka Decision Maker</span><span class="tool-pill">4. Cek Profit</span><span class="tool-pill">5. Baru gas Ads & Creative</span></div>';
+return;
+}
+hitungStatMetrik();
+const totalOmset = produkList.reduce((s, p) => s + (p.omset || 0), 0);
+const totalPesanan = produkList.reduce((s, p) => s + (p.pesanan || 0), 0);
+const lvlOf = (p) => tentukanLevel(hitungSkorTotal(p)).key;
+const cHigh = produkList.filter((p) => lvlOf(p) === "high").length;
+const cLow = produkList.filter((p) => lvlOf(p) === "low").length;
+const stockOut = produkList.filter((p) => p.stok != null && p.stok === 0 && (p.pesanan || 0) > 0);
+const cvrRendah = produkList.filter((p) => p.cvr > 0 && p.cvr < 2);
+const totSpend = iklanList.reduce((s, c) => s + (c.biaya || 0), 0);
+const totAdSales = iklanList.reduce((s, c) => s + (c.omzet || 0), 0);
+const roasGlobal = totSpend > 0 ? totAdSales / totSpend : 0;
+const boncos = iklanList.filter((c) => ((c.roas && c.roas > 0) ? c.roas : ((c.biaya || 0) > 0 ? (c.omzet || 0) / c.biaya : 0)) < 2 && (c.biaya || 0) > 0);
+const sortOmset = produkList.slice().sort((a, b) => (b.omset || 0) - (a.omset || 0));
+const juara = sortOmset[0];
+const adaKualitas = produkList.some((p) => (p.cvr || 0) > 0 || (p.repeat || 0) > 0);
+const gems = produkList.map((p) => {
+const pOmset = persentil(p.omset || 0, statMetrik.omset);
+const qNorm = adaKualitas ? Math.max(persentil(p.cvr || 0, statMetrik.cvr), persentil(p.repeat || 0, statMetrik.repeat)) : persentil(p.pesanan || 0, statMetrik.pesanan);
+return { p: p, skor: qNorm * (1 - pOmset), qNorm: qNorm, pOmset: pOmset };
+}).filter((g) => stokSiap(g.p) && g.qNorm >= 0.7 && g.pOmset <= 0.4 && g.skor > 0);
+let headline = "";
+if (stockOut.length > 0) headline = "Prioritas hari ini: <strong>restock dulu</strong>. Ada produk yang masih laku tapi stoknya habis, jadi omset kamu lagi bocor.";
+else if (boncos.length > 0) headline = "Prioritas hari ini: <strong>stop budget bocor</strong>. Rapihin atau pause campaign yang ROAS-nya di bawah 2 sebelum nambah spend.";
+else if (gems.length > 0) headline = "Prioritas hari ini: <strong>angkat hidden gems</strong>. Ada produk yang sinyalnya kuat tapi exposure-nya masih kurang.";
+else headline = "Prioritas hari ini: <strong>scale yang sudah menang</strong>. Fokus gandain produk & campaign yang udah kebukti jalan.";
+const shopeePlan = stockOut.length > 0 ? "Buka panel <strong>Decision Maker</strong> + <strong>Profit</strong>, restock SKU prioritas, lalu amankan listing pemenang kayak <strong>" + juara.nama + "</strong>." : (roasGlobal >= 3 ? "Main aman di Shopee: pertahankan produk juara, scale iklan pencarian bertahap, dan cek stok sebelum budget dinaikin." : "Fokus Shopee sekarang bukan nambah budget, tapi rapihin listing CVR rendah, keyword, dan produk yang masih lemah.");
+const tiktokPlan = gems.length > 0 ? "Pakai TikTok buat dorong demand baru ke hidden gems. Fokus video hook 3 detik pertama, demo fungsi, dan angle masalah-solusi." : "Pakai TikTok buat perkuat social proof produk juara: UGC singkat, before-after, dan konten perbandingan manfaat.";
+const financePlan = "Filter scale versi gue: <strong>profit dulu baru volume</strong>. Kalau margin tipis, jangan biarin omset palsu bikin kamu overconfident.";
+const opsPlan = cvrRendah.length > 0 ? "Ada <strong>" + cvrRendah.length + " produk CVR rendah</strong>. Artinya masalah utama ada di foto, judul, harga, atau trust—bukan selalu di traffic." : "Operasional cukup rapi. Tinggal disiplin cek target, snapshot mingguan, dan stok biar momentum nggak putus.";
+el.innerHTML = '<div class="decision-callout">' + headline + '</div>' +
+'<div class="command-grid">' +
+'<div class="command-box"><h3>📌 Prioritas Utama</h3><p>Omset <strong>' + formatRupiah(totalOmset) + '</strong> dari <strong>' + totalPesanan.toLocaleString("id-ID") + '</strong> pesanan. Komposisi sekarang: <strong>' + cHigh + ' High</strong> dan <strong>' + cLow + ' Low</strong>.</p></div>' +
+'<div class="command-box"><h3>🛍️ Fokus Shopee</h3><p>' + shopeePlan + '</p></div>' +
+'<div class="command-box"><h3>🎵 Fokus TikTok</h3><p>' + tiktokPlan + '</p></div>' +
+'<div class="command-box"><h3>💰 Filter Profit</h3><p>' + financePlan + '</p><p style="margin-top:6px;color:#64748b">ROAS iklan global: <strong>' + (totSpend > 0 ? roasGlobal.toFixed(2) + 'x' : 'belum ada data') + '</strong>' + (boncos.length ? ' · campaign bocor: <strong>' + boncos.length + '</strong>' : '') + '</p></div>' +
+'</div>' +
+'<div class="hero-note"><strong>Tool map yang gue rapihin:</strong> buka <strong>Command Center & Decision Maker</strong> buat arah, <strong>Profit & Kalkulator</strong> buat validasi cuan, <strong>Ads Playbook & Analisa Iklan</strong> buat akuisisi, lalu <strong>Studio / SEO / Creative Generator</strong> buat bahan jualan. ' + opsPlan + '</div>' +
+'<div class="tool-stack">' +
+'<span class="tool-pill">🧠 Command Center = arah hari ini</span>' +
+'<span class="tool-pill">💰 Profit = filter scale</span>' +
+'<span class="tool-pill">📈 Iklan = cek campaign</span>' +
+'<span class="tool-pill">📣 Playbook Ads = eksekusi channel</span>' +
+'<span class="tool-pill">🔑 SEO = rapihin judul</span>' +
+'<span class="tool-pill">🔍 Studio = benahi foto</span>' +
+'<span class="tool-pill">🎨 Creative = bikin materi promosi</span>' +
+'<span class="tool-pill">📋 Laporan = siap meeting</span>' +
+'</div>';
+}
+function renderAnalisis() {
       const el = document.getElementById("analisis");
       if (produkList.length === 0) { el.innerHTML = '<p style="color:#999">Belum ada data. Import Excel atau tambah produk dulu, analisis muncul otomatis di sini.</p>'; return; }
       const sortOmset = produkList.slice().sort((a, b) => (b.omset || 0) - (a.omset || 0));
@@ -1320,7 +1411,7 @@ function renderAiSpesialis() {
   if (untung.length > 0) keputusan.push({ p: 2, lbl: "GAS", warna: "#1a7f37", judul: "Scale-up mesin uang", aksi: "Naikin budget bertahap (+20%/minggu) di " + untung.length + " campaign untung (ROAS >= 4) selama ROAS tetap stabil.", alasan: "Ini campaign yang udah kebukti profit - di sinilah modal paling aman digandain.", dampak: "Pertumbuhan omset tercepat dengan risiko rendah." });
   else if (cHigh > 0) keputusan.push({ p: 2, lbl: "GAS", warna: "#1a7f37", judul: "Dorong produk High Level", aksi: "Fokusin iklan & stok ke " + cHigh + " produk High Level, jangan sampai kehabisan stok.", alasan: "Produk papan atas ini penyumbang omset utama toko.", dampak: "Amanin & gandain revenue inti." });
   if (gems.length > 0) keputusan.push({ p: 2, lbl: "PELUANG", warna: "#6b21a8", judul: "Angkat hidden gems", aksi: "Alokasi budget iklan khusus buat " + gems.length + " hidden gems: " + gems.slice(0, 3).map((g) => g.p.nama).join(", ") + (gems.length > 3 ? ", dll" : "") + ".", alasan: "Sinyal konversi/loyalitas kuat tapi omset masih kecil - tinggal dikasih exposure.", dampak: "Kandidat produk juara berikutnya." });
-  if (cvrRendah.length > 0) keputusan.push({ p: 3, lbl: "PERBAIKI", warna: "#9a6700", judul: "Benahi listing CVR rendah", aksi: "Revisi foto utama, judul + keyword, harga, & deskripsi " + cvrRendah.length + " produk dengan CVR < 2% SEBELUM gas iklan.", alasan: "Banyak yang lihat tapi sedikit yang beli - ngiklanin listing lemah = buang duit.", dampak: "Konversi naik, tiap klik jadi lebih bernilai." });
+  if (cvrRendah.length > 0) keputusan.push({ p: 3, lbl: "PERBAIKI", warna: "#9a6700", judul: "Bedah CVR rendah per akar masalah", aksi: "Pisahin " + cvrRendah.length + " produk CVR < 2% jadi 2 tipe: impresi tinggi tapi CTR rendah = ganti foto utama + 5 kata awal judul; klik udah masuk tapi CVR tetap rendah = koreksi harga, voucher, review, foto detail, variasi, & deskripsi.", alasan: "Masalah CTR dan masalah CVR itu beda obat. Kalau disamaratakan, listing muter-muter tapi hasilnya lambat naik.", dampak: "Perbaikan jadi lebih presisi: hook dibenerin kalau orang belum klik, conversion dibenerin kalau orang udah klik tapi belum checkout." });
   if (mati.length > 0) keputusan.push({ p: 3, lbl: "EVALUASI", warna: "#c1271e", judul: "Bersihin produk mati", aksi: "Kasih tenggat 2-4 minggu buat " + mati.length + " produk tanpa penjualan; kalau tetap sepi, drop & alihin energi + budget.", alasan: "Produk nol penjualan cuma nambah beban kelola tanpa hasil.", dampak: "Fokus & modal balik ke produk produktif." });
   if (konsentrasi >= 0.4 && n >= 3) keputusan.push({ p: 3, lbl: "RISIKO", warna: "#d97706", judul: "Kurangi ketergantungan ke 1 produk", aksi: "'" + juara.nama + "' nyumbang " + Math.round(konsentrasi * 100) + "% total omset. Bangun 2-3 produk pendukung dari Mid Level / hidden gems.", alasan: "Kalau produk ini bermasalah (stok/iklan/kompetitor), omset toko langsung jatuh.", dampak: "Bisnis lebih stabil & tahan guncangan." });
   if (anjlok.length > 0) keputusan.push({ p: 2, lbl: "WASPADA", warna: "#c1271e", judul: "Selidiki produk yang anjlok", aksi: "Cek penyebab omset turun >20% di: " + anjlok.slice(0, 3).join(", ") + (anjlok.length > 3 ? ", dll" : "") + " (harga? stok? iklan dimatiin? kompetitor?).", alasan: "Penurunan tajam biasanya ada akar masalah yang masih bisa dibalikin kalau cepat ditangani.", dampak: "Cegah omset bocor lebih jauh." });
@@ -1338,21 +1429,30 @@ function renderAiSpesialis() {
   if (keputusan.length === 0) { html += '<p style="color:#1a7f37;font-size:13px">Mantap - nggak ada masalah mendesak. Pertahankan ritme & terus pantau tiap minggu.</p>'; }
   else html += keputusan.map((k) => '<div style="border:1px solid #eee;border-left:4px solid ' + k.warna + ';border-radius:0 8px 8px 0;padding:10px 14px;margin-bottom:10px"><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap"><span style="font-size:10px;font-weight:700;color:#fff;background:' + k.warna + ';padding:2px 8px;border-radius:20px">' + k.lbl + '</span><strong style="font-size:14px">' + k.judul + '</strong></div><div style="font-size:13px;margin-bottom:4px">' + k.aksi + '</div><div style="font-size:12px;color:#777"><strong>Kenapa:</strong> ' + k.alasan + '</div><div style="font-size:12px;color:#1a7f37"><strong>Dampak:</strong> ' + k.dampak + '</div></div>').join('');
   const vonis = (p) => {
-    const adaIklanP = (p.biayaIklan || 0) > 0;
-    const roasP = (p.roas && p.roas > 0) ? p.roas : (adaIklanP ? (p.omsetIklan || 0) / p.biayaIklan : 0);
-    const pOmset = persentil(p.omset || 0, statMetrik.omset);
-    const qN = adaKualitas ? Math.max(persentil(p.cvr || 0, statMetrik.cvr), persentil(p.repeat || 0, statMetrik.repeat)) : persentil(p.pesanan || 0, statMetrik.pesanan);
-    const adaJual = (p.omset || 0) > 0 || (p.pesanan || 0) > 0;
-    const lvl = tentukanLevel(hitungSkorTotal(p)).key;
-    if (p.stok != null && p.stok === 0 && adaJual) return { lbl: "RESTOCK", warna: "#c1271e", aksi: "Stok HABIS padahal masih laku - restock secepatnya, tiap hari kosong = penjualan & ranking ikut hilang." };
-    if (adaIklanP && roasP > 0 && roasP < 2) return { lbl: "BENAHI IKLAN", warna: "#c1271e", aksi: "Iklan boncos (ROAS " + roasP.toFixed(1) + "x). Pause/turunin budget, benahi targeting + listing dulu sebelum lanjut." };
-    if (!adaJual) return { lbl: "TEST / DROP", warna: "#9a6700", aksi: "Belum ada penjualan. Kasih tenggat 2-4 minggu + iklan tes kecil; kalau tetap sepi, drop & alihin budget." };
-    if (p.cvr > 0 && p.cvr < 2) return { lbl: "PERBAIKI LISTING", warna: "#9a6700", aksi: "CVR rendah (" + p.cvr + "%). Revisi foto utama, judul + keyword, harga & deskripsi SEBELUM gas iklan." };
-    if ((adaIklanP && roasP >= 4) || lvl === "high" || pOmset >= 0.8) return { lbl: "SCALE", warna: "#1a7f37", aksi: "Perform bagus" + (roasP >= 4 ? " (ROAS " + roasP.toFixed(1) + "x)" : "") + " - naikin budget iklan bertahap (+20%/minggu), bikin bundling/upsell, jaga stok." };
-    if (stokSiap(p) && qN >= 0.7 && pOmset <= 0.4) return { lbl: "GAS EXPOSURE", warna: "#6b21a8", aksi: "Hidden gem: sinyal kuat tapi omset kecil. Gas iklan pencarian + konten organik, kandidat produk juara." };
-    if (p.stok != null && p.stok > 0 && p.stok <= 10 && adaJual) return { lbl: "SIAPIN RESTOCK", warna: "#d97706", aksi: "Stok tinggal " + p.stok + " & masih laku - siapin restock biar nggak kehabisan pas lagi rame." };
-    if (p.repeat > 0 && p.repeat < 10 && adaJual) return { lbl: "JAGA RETENSI", warna: "#9a6700", aksi: "Repeat rate rendah (" + p.repeat + "%). Tingkatin kualitas + after-sales / bonus buat repeat order." };
-    return { lbl: "PERTAHANKAN", warna: "#2383e2", aksi: "Stabil. Pantau mingguan, pertahankan ritme iklan & stok." };
+const adaIklanP = (p.biayaIklan || 0) > 0;
+const roasP = (p.roas && p.roas > 0) ? p.roas : (adaIklanP ? (p.omsetIklan || 0) / p.biayaIklan : 0);
+const pOmset = persentil(p.omset || 0, statMetrik.omset);
+const qN = adaKualitas ? Math.max(persentil(p.cvr || 0, statMetrik.cvr), persentil(p.repeat || 0, statMetrik.repeat)) : persentil(p.pesanan || 0, statMetrik.pesanan);
+const adaJual = (p.omset || 0) > 0 || (p.pesanan || 0) > 0;
+const lvl = tentukanLevel(hitungSkorTotal(p)).key;
+const diag = diagnosaListingSpesifik(p);
+if (p.stok != null && p.stok === 0 && adaJual) return { lbl: "RESTOCK", warna: "#c1271e", aksi: "Stok HABIS padahal masih laku - restock secepatnya, tiap hari kosong = penjualan & ranking ikut hilang." };
+if (adaIklanP && roasP > 0 && roasP < 2) {
+if (diag.code === "hookLeak" || diag.code === "thumbnail") return { lbl: "BENAHI IKLAN", warna: "#c1271e", aksi: diag.long + " Jangan naikin budget sebelum CTR dibenerin." };
+if (diag.code === "listingLeak" || diag.code === "closing" || diag.code === "priceTrust") return { lbl: "BENAHI IKLAN", warna: "#c1271e", aksi: diag.long + " Pause / turunin budget dulu sampai listing lebih siap closing." };
+return { lbl: "BENAHI IKLAN", warna: "#c1271e", aksi: "Iklan boncos (ROAS " + roasP.toFixed(1) + "x). Pause/turunin budget, lalu cek mana yang salah: CTR jelek = foto/keyword, CTR oke tapi CVR jelek = harga/trust/listing." };
+}
+if (!adaJual) {
+if (diag.code === "thumbnail" || diag.code === "closing") return { lbl: "TEST / DROP", warna: "#9a6700", aksi: diag.long + " Kasih masa tes 2-4 minggu; kalau tetap sepi, drop & pindahin energi ke produk lain." };
+return { lbl: "TEST / DROP", warna: "#9a6700", aksi: "Belum ada penjualan. Kasih tenggat 2-4 minggu + iklan tes kecil; kalau impresi ada tapi CTR jelek, benahi foto/judul. Kalau klik ada tapi tetap nggak closing, cek harga, voucher, dan trust. Kalau tetap sepi, drop." };
+}
+if (diag.code === "thumbnail") return { lbl: "PERBAIKI LISTING", warna: "#9a6700", aksi: diag.long };
+if (diag.code === "closing" || diag.code === "priceTrust" || (p.cvr > 0 && p.cvr < 2)) return { lbl: "PERBAIKI LISTING", warna: "#9a6700", aksi: diag.long };
+if ((adaIklanP && roasP >= 4) || lvl === "high" || pOmset >= 0.8) return { lbl: "SCALE", warna: "#1a7f37", aksi: "Perform bagus" + (roasP >= 4 ? " (ROAS " + roasP.toFixed(1) + "x)" : "") + " - naikin budget iklan bertahap (+20%/minggu), bikin bundling/upsell, jaga stok." };
+if (stokSiap(p) && qN >= 0.7 && pOmset <= 0.4) return { lbl: "GAS EXPOSURE", warna: "#6b21a8", aksi: "Hidden gem: sinyal kuat tapi omset kecil. Gas iklan pencarian + konten organik, kandidat produk juara." };
+if (p.stok != null && p.stok > 0 && p.stok <= 10 && adaJual) return { lbl: "SIAPIN RESTOCK", warna: "#d97706", aksi: "Stok tinggal " + p.stok + " & masih laku - siapin restock biar nggak kehabisan pas lagi rame." };
+if (p.repeat > 0 && p.repeat < 10 && adaJual) return { lbl: "JAGA RETENSI", warna: "#9a6700", aksi: diag.code === "retention" ? diag.long : "Repeat rate rendah (" + p.repeat + "%). Tingkatin kualitas + after-sales / bonus buat repeat order." };
+return { lbl: "PERTAHANKAN", warna: "#2383e2", aksi: diag.code === "healthy" ? diag.long : "Stabil. Pantau mingguan, pertahankan ritme iklan & stok." };
   };
   const prioMap = { "RESTOCK": 1, "BENAHI IKLAN": 2, "TEST / DROP": 3, "PERBAIKI LISTING": 4, "SCALE": 5, "GAS EXPOSURE": 6, "SIAPIN RESTOCK": 7, "JAGA RETENSI": 8, "PERTAHANKAN": 9 };
   const perProduk = produkList.map((p) => ({ p: p, v: vonis(p) })).sort((a, b) => (prioMap[a.v.lbl] - prioMap[b.v.lbl]) || ((b.p.omset || 0) - (a.p.omset || 0)));
